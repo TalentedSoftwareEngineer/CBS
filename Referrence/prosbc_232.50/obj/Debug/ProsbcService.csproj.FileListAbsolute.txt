@@ -1,0 +1,11 @@
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.ProjectInstaller.resources
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.Service1.resources
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.csproj.GenerateResource.Cache
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\bin\Debug\ProsbcService.exe.config
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\bin\Debug\ProsbcService.exe
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\bin\Debug\ProsbcService.pdb
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\bin\Debug\MySql.Data.dll
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\bin\Debug\Renci.SshNet.dll
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.exe
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.pdb
+E:\work\billing\service_new\prosbc_232.50\prosbc_232.50\obj\Debug\ProsbcService.csprojResolveAssemblyReference.cache

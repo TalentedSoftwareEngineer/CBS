@@ -1,0 +1,10 @@
+E:\工作\billing\service\nextone\NextoneService\bin\Debug\NextoneService.exe
+E:\工作\billing\service\nextone\NextoneService\bin\Debug\NextoneService.pdb
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\ResolveAssemblyReference.cache
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\NextoneService.ProjectInstaller.resources
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\NextoneService.Service1.resources
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\NextoneService.csproj.GenerateResource.Cache
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\NextoneService.exe
+E:\工作\billing\service\nextone\NextoneService\obj\Debug\NextoneService.pdb
+E:\工作\billing\service\entice\EnticeService\obj\Debug\NextoneService.exe
+E:\工作\billing\service\entice\EnticeService\obj\Debug\NextoneService.pdb
