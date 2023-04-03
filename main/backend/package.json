@@ -1,0 +1,92 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "description": "Central Billing System Backend Restful API",
+  "keywords": [
+    "loopback-application",
+    "loopback"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": "14 || 16 || 17 || 18"
+  },
+  "scripts": {
+    "build": "lb-tsc",
+    "build:watch": "lb-tsc --watch",
+    "lint": "npm run eslint && npm run prettier:check",
+    "lint:fix": "npm run eslint:fix && npm run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
+    "prettier:check": "npm run prettier:cli -- -l",
+    "prettier:fix": "npm run prettier:cli -- --write",
+    "eslint": "lb-eslint --report-unused-disable-directives .",
+    "eslint:fix": "npm run eslint -- --fix",
+    "pretest": "npm run rebuild",
+    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "posttest": "npm run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && npm run posttest",
+    "docker:build": "docker build -t backend .",
+    "docker:run": "docker run -p 3000:3000 -d backend",
+    "premigrate": "npm run build",
+    "migrate": "node ./dist/migrate",
+    "preopenapi-spec": "npm run build",
+    "openapi-spec": "node ./dist/openapi-spec",
+    "prestart": "npm run rebuild",
+    "go-dev": "run-script-os",
+    "go-dev:windows": "set NODE_ENV=development && node -r source-map-support/register .",
+    "go-dev:linux": "export NODE_ENV=development && node -r source-map-support/register .",
+    "go-dev:macos": "export NODE_ENV=development && node -r source-map-support/register .",
+    "go-prod": "run-script-os",
+    "go-prod:windows": "set NODE_ENV=production && npm run rebuild && pm2 start",
+    "go-prod:linux": "export NODE_ENV=production && npm run rebuild && pm2 start",
+    "go-prod:macos": "export NODE_ENV=production && npm run rebuild && pm2 start",
+    "start": "npm run go-dev",
+    "start:prod": "npm run go-prod",
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "rebuild": "npm run clean && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "hiroaki126 <hiroaki.morimoto.126@gmail.com>",
+  "license": "",
+  "files": [
+    "README.md",
+    "dist",
+    "src",
+    "!*/__tests__"
+  ],
+  "dependencies": {
+    "@loopback/authentication": "^9.0.8",
+    "@loopback/authentication-jwt": "^0.12.8",
+    "@loopback/authorization": "^0.12.8",
+    "@loopback/boot": "^5.0.5",
+    "@loopback/core": "^4.0.5",
+    "@loopback/cron": "^0.9.8",
+    "@loopback/repository": "^5.1.3",
+    "@loopback/rest": "^12.0.5",
+    "@loopback/rest-explorer": "^5.0.5",
+    "@loopback/security": "^0.8.8",
+    "@loopback/service-proxy": "^5.0.5",
+    "axios": "^1.3.4",
+    "csv-parser": "^3.0.0",
+    "directory-tree": "^3.5.1",
+    "exceljs": "^4.3.0",
+    "fast-csv": "^4.3.6",
+    "loopback-connector-mysql": "^5.4.4",
+    "pm2": "^5.2.2",
+    "shell-exec": "^1.1.2",
+    "tslib": "^2.0.0"
+  },
+  "devDependencies": {
+    "@loopback/build": "^9.0.5",
+    "@loopback/eslint-config": "^13.0.5",
+    "@loopback/testlab": "^5.0.5",
+    "@types/node": "^14.18.33",
+    "eslint": "^8.28.0",
+    "run-script-os": "^1.1.6",
+    "source-map-support": "^0.5.21",
+    "typescript": "~4.8.4"
+  }
+}

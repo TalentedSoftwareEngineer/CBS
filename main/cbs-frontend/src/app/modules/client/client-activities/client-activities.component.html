@@ -1,0 +1,30 @@
+<h4 class="page_title">Client Activities</h4>
+<div class="card w-6 mx-auto">
+    <p-table [value]="activities" [scrollable]="true" scrollHeight="300px" styleClass="mx-auto w-10 p-datatable-gridlines">
+        <ng-template pTemplate="caption">
+            <div class="grid">
+                <div class="col-6 text-center">
+                    <p class="text-900 mb-0">Active Clients</p>
+                    <p class="text-xl"><b class="text-yellow-600">19</b> Active</p>
+                </div>
+                <div class="col-6 text-center">
+                    <p class="text-900 mb-0">Users Online</p>
+                    <p class="text-xl"><b class="text-green-600">0</b> Last Hour</p>
+                </div>
+            </div>
+        </ng-template>        
+        <ng-template pTemplate="body" let-activity>
+            <tr>
+                <td style="flex-grow: 3;">
+                    <div>
+                        <p class="text-900 mb-0">{{activity.title}}</p>
+                        <small class="text-blue-600">{{activity.ip}}</small>
+                    </div>
+                </td>
+                <td>
+                    <small class="text-700">{{activity.period}}</small>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
