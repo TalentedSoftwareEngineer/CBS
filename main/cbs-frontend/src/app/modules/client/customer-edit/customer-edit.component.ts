@@ -42,6 +42,21 @@ export class CustomerEditComponent implements OnInit {
   rateRowsPerPageOptions: any[] = [10, 25, 50]
   rateIsLoading = false;
 
+  //Npanxx Lerg Rate Table
+  npanxxPageSize = 10
+  npanxxPageIndex = 1
+  npanxxFilterName = ''
+  npanxxFilterValue = ''
+  npanxxSortActive = 'id';
+  npanxxSortDirection = 'ASC'
+  npanxxResultsLength = -1
+  npanxxFilterResultLength = -1;
+  npanxxIsLoading = true
+  npanxxRowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  npanxxRates: any[] = []
+
+  tableFlatRate: string = ''
+
   groups: any[] = [];
 
   tabIndex: number = 0;
@@ -235,8 +250,7 @@ export class CustomerEditComponent implements OnInit {
     {name: 'Flat Rate', value: 'FIXED'},
     {name: 'Inter/Intra Rate', value: 'INTER/INTRA'}
   ];
-
-  isFlatRate: boolean = true;
+  isGenerating: boolean = false;
 
   customer_id: number = -1;
   clickedId = '';
@@ -372,6 +386,47 @@ export class CustomerEditComponent implements OnInit {
     })).toPromise();
   }
 
+
+  getLergsRatesList = async () => {
+    this.npanxxIsLoading = true;
+    try {
+      let filterValue = this.npanxxFilterValue;
+
+      await this.api.getLergsRatesList(this.npanxxSortActive, this.npanxxSortDirection, this.npanxxPageIndex, this.npanxxPageSize, filterValue)
+        .pipe(tap(async (response: any[]) => {
+          this.npanxxRates = [];
+          response.map(u => {
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+          });
+
+          for (let item of response) {
+            item.npa = item.npanxx.slice(0, 3);
+            item.nxx = item.npanxx.slice(3, 6);
+            item.flat_rate = this.tableFlatRate;
+            this.npanxxRates.push(item)
+          }
+        })).toPromise();
+
+      this.npanxxFilterResultLength = -1;
+      await this.api.getLergsRatesCount(filterValue)
+      .pipe(tap( res => {
+        this.npanxxFilterResultLength = res.count
+      })).toPromise();
+    } catch (e) {
+    } finally {
+      setTimeout(() => this.npanxxIsLoading = false, 1000);
+    }
+  }
+
+  getTotalLergsRatesCount = async () => {
+    this.npanxxResultsLength = -1
+    await this.api.getLergsRatesCount('')
+    .pipe(tap( res => {
+      this.npanxxResultsLength = res.count
+    })).toPromise();
+  }
+
   initCustomer = () => {
     this.api.getCustomer(this.customer_id).subscribe(async res => {
       this.companyForm.setValue({
@@ -410,11 +465,12 @@ export class CustomerEditComponent implements OnInit {
         start: res.customerBilling?.start != undefined ? new Date(res.customerBilling?.start) : new Date()
       });
 
+      this.selectRateType = res.rate_type;
       this.inputFlatRate = res.flat_rate;
+      this.tableFlatRate = res.flat_rate;
       this.inputDefaultRate = res.default_rate;
       this.inputInidur = res.init_duration;
       this.inputSuccdur = res.succ_duration;
-      this.selectRateType = res.rate_type;
 
       this.setCustomerRateFormDefault();
     })
@@ -425,11 +481,15 @@ export class CustomerEditComponent implements OnInit {
       this.rateForm.setValue({
         prefix: '',
         destination_name: '',
-        intra_rate: res.rate ? res.rate : '',
-        inter_rate: res.rate ? res.rate : '',
+        intra_rate: res.default_rate ? res.default_rate : '',
+        inter_rate: res.default_rate ? res.default_rate : '',
         init_dur: res.init_duration ? res.init_duration : '',
         succ_dur: res.succ_duration ? res.succ_duration : '',
       });
+
+      this.inputFlatRate = res.flat_rate;
+      this.tableFlatRate = res.flat_rate;
+      this.inputDefaultRate = res.default_rate;
     });
   }
 
@@ -481,6 +541,11 @@ export class CustomerEditComponent implements OnInit {
       last_name: this.companyForm.get('last_name')?.value,
       email: this.companyForm.get('email')?.value,
       status: this.companyForm.get('status')?.value,
+      rate_type: "",
+      flat_rate: 0,
+      default_rate: 0,
+      init_duration: 0,
+      succ_duration: 0
     }
 
     await this.api.updateCompany(this.customer_id, data).pipe(tap(res=>{
@@ -528,8 +593,6 @@ export class CustomerEditComponent implements OnInit {
   }
 
   onUpdatedPrimarySubmit = async () => {
-    this.isFlatRate = this.selectRateType=='FIXED'
-    return;
     if (this.primaryRateForm.invalid) {
       this.validateAllFormFields(this.primaryRateForm)
       return
@@ -555,10 +618,11 @@ export class CustomerEditComponent implements OnInit {
     }
 
     if(this.selectRateType=='FIXED') {
-      data.flat_rate = this.inputFlatRate;
+      data.flat_rate = Number(this.inputFlatRate);
     }
 
     await this.api.updateCompany(this.customer_id, data).pipe(tap(res=>{
+      this.tableFlatRate = this.inputFlatRate;
       this.showSuccess('Successfully updated!', 'Success');
     })).toPromise();
   }
@@ -598,7 +662,12 @@ export class CustomerEditComponent implements OnInit {
   }
 
   onGenerate = () => {
-
+    // this.onUpdatedPrimarySubmit();
+    this.isGenerating = !this.isGenerating;
+    if(this.isGenerating) {
+      this.getLergsRatesList();
+      this.getTotalLergsRatesCount();
+    }
   }
 
   openModal = (modal_title: string) => {
@@ -792,7 +861,10 @@ export class CustomerEditComponent implements OnInit {
   }
 
   openRateModal = (rateModalTitle: string) => {
-    this.setCustomerRateFormDefault();
+    if(rateModalTitle.toLowerCase()=='add') {
+      this.setCustomerRateFormDefault();      
+    }
+
     this.flag_openRateDialog = true;
     this.rateModalTitle = rateModalTitle;
   }
@@ -945,6 +1017,34 @@ export class CustomerEditComponent implements OnInit {
 
   ratePaginate = (event: any) => {
     this.onPagination(event.page+1, event.rows);
+  }
+  
+  //Npanxx Lerg Rate table pagination and sort
+  onNpanxxSortChange = async (name: any) => {
+    this.npanxxSortActive = name;
+    this.npanxxSortDirection = this.npanxxSortDirection === 'ASC' ? 'DESC' : 'ASC';
+    this.npanxxPageIndex = 1;
+    await this.getLergsRatesList();
+  }
+
+  onNpanxxFilter = (event: Event) => {
+    this.npanxxPageIndex = 1;
+    this.npanxxFilterName = (event.target as HTMLInputElement).name;
+    this.npanxxFilterValue = (event.target as HTMLInputElement).value;
+  }
+
+  onNpanxxClickFilter = () => this.getLergsRatesList();
+
+  onNpanxxPagination = async (pageIndex: any, pageRows: number) => {
+    this.npanxxPageSize = pageRows;
+    const totalPageCount = Math.ceil(this.npanxxFilterResultLength / this.npanxxPageSize);
+    if (pageIndex === 0 || pageIndex > totalPageCount) { return; }
+    this.npanxxPageIndex = pageIndex;
+    await this.getLergsRatesList();
+  }
+
+  npanxxPaginate = (event: any) => {
+    this.onNpanxxPagination(event.page+1, event.rows);
   }
 
   showWarn = (msg: string) => {

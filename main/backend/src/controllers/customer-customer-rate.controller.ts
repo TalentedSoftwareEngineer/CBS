@@ -13,12 +13,12 @@ import {
   param,
   patch,
   post,
-  requestBody,
+  requestBody, response,
 } from '@loopback/rest';
 import {
   BulkUpload,
   Customer,
-  CustomerRate, CustomerResourceGroup,
+  CustomerRate, CustomerResourceGroup, Lerg,
 } from '../models';
 import {CustomerRateRepository, CustomerRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
@@ -380,9 +380,9 @@ export class CustomerCustomerRateController {
 
       // initialize with default rates
       if (inter_rate==null || inter_rate=="")
-        inter_rate = defaults.rate
+        inter_rate = defaults.default_rate
       if (intra_rate==null || intra_rate=="")
-        intra_rate = defaults.rate
+        intra_rate = defaults.default_rate
       if (init_duration==null || init_duration=="")
         init_duration = defaults.init_duration
       if (succ_duration==null || succ_duration=="")

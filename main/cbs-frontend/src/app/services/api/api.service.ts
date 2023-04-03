@@ -349,6 +349,24 @@ export class ApiService {
     return this.http.get<any>(`${this.coreApi}/lergs/count?${parametersQuery}`);
   }
 
+  getLergsRatesList(active: string, direction: string, page: number, size: number, filterValue: string): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`
+    }).toString();
+    const url = `${this.coreApi}/lergs/rates?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+
+  getLergsRatesCount(filterValue: string): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/lergs/rates_count?${parametersQuery}`);
+  }
+
   createNPANXX(data: any): Observable<any> {
     return this.http.post<any>(`${this.coreApi}/lergs`, data);
   }

@@ -292,12 +292,15 @@
                               <label>Rate Type</label>
                             </span>
                         </div>
-                        <div *ngIf="selectRateType=='FIXED'" class="col-12 md:col-6">
-                            <span class="p-float-label">
-                              <input type="text" class="form-control" id="flat_rate" formControlName="flat_rate" pInputText [(ngModel)]="inputFlatRate" class="{{isPrimaryRateFormFieldValid('flat_rate') ? 'ng-invalid ng-dirty' : ''}}">
-                              <label for="flat_rate">Flat Rate</label>
-                            </span>
-                        </div>
+                        <ng-container *ngIf="selectRateType=='FIXED'">
+                            <div class="col-12 md:col-6 p-0"></div>
+                            <div class="col-12 md:col-6">
+                                <span class="p-float-label">
+                                  <input type="text" class="form-control" id="flat_rate" formControlName="flat_rate" pInputText [(ngModel)]="inputFlatRate" class="{{isPrimaryRateFormFieldValid('flat_rate') ? 'ng-invalid ng-dirty' : ''}}">
+                                  <label for="flat_rate">Flat Rate</label>
+                                </span>
+                            </div>
+                        </ng-container>
 
                         <div class="col-12 md:col-6">
                             <span class="p-float-label">
@@ -325,7 +328,124 @@
                 </form>
             </div>
 
-            <ng-container *ngIf="isFlatRate;else InterIntraRate">
+            <ng-container *ngIf="selectRateType=='FIXED';else InterIntraRate">
+                <div class="card pb-3">
+                    <div class="grid">
+                        <div class="col-12 xl:col-8">
+                            <div *ngIf="isGenerating" class="grid">
+                                <div class="xl:col-7 col-12 p-fluid pl-0 pr-0">
+                                    <div class="p-inputgroup">
+                                        <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="npanxxFilterValue" [disabled]="npanxxIsLoading" (keyup.enter)="onNpanxxClickFilter()">
+                                        <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="npanxxIsLoading ? '' : onNpanxxClickFilter()" [style]="npanxxIsLoading ? {opacity: 0.5} : ''"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 xl:col-4 text-right">
+                            <span class="p-buttonset">
+                                <button pButton pRipple type="button" size="large" (click)="onGenerate()" label="Generate" icon="pi pi-plus-circle"></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" *ngIf="isGenerating">
+                    <h5><span *ngIf="npanxxResultsLength!=-1">Total {{npanxxResultsLength}} Record</span><span *ngIf="npanxxResultsLength>1">s</span><i *ngIf="npanxxResultsLength>0&&npanxxFilterResultLength>0&&npanxxFilterResultLength<npanxxResultsLength" style="font-size: medium;">, {{npanxxFilterResultLength}} Record<span *ngIf="npanxxFilterResultLength>1">s</span> Filtered</i></h5>
+                    <p-table [value]="npanxxRates" responsiveLayout="stack" [responsive]="true">
+                      <ng-template pTemplate="header">
+                        <tr>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'npanxx' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('npanxx')">NPANXX</a>
+                          </th>
+                          <th class="text-align-center">NPA</th>
+                          <th class="text-align-center">NXX</th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'thousand' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('thousand')">X</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'lata' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('lata')">LATA</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'rate_center' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('rate_center')">Rate Center</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'ocn' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('ocn')">OCN</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'ocn_name' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                              <a (click)="onNpanxxSortChange('ocn_name')">OCN NAME</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'state' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('state')">STATE</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'category' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('category')">CATEGORY</a>
+                          </th>
+                          <th class="text-align-center">Flat Rate</th>
+                          <!-- <th class="text-align-center">Action</th> -->
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="body" let-npanxx_item>
+                        <tr>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NPANXX</span>
+                            {{ npanxx_item.npanxx}}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NPA</span>
+                            {{ npanxx_item.npa }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NXX</span>
+                            {{ npanxx_item.nxx }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">X</span>
+                            {{ npanxx_item.thousand}}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">LATA</span>
+                            {{ npanxx_item.lata }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">Rate Center</span>
+                            {{ npanxx_item.rate_center }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">OCN</span>
+                            {{ npanxx_item.ocn }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">OCN NAME</span>
+                            {{ npanxx_item.ocn_name }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">STATE</span>
+                            {{ npanxx_item.state }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">CATEGORY</span>
+                            {{ npanxx_item.category }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">Flat Rate</span>
+                            {{ npanxx_item.flat_rate }}
+                          </td>
+                          <!-- <td class="text-align-center">
+                            <span class="p-buttonset">
+                              <button pButton type="button" title="Edit" icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-warning" (click)="onOpenEditModal($event, npanxx_item.id)"></button>
+                              <button pButton type="button" title="Delete" icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="delete($event, npanxx_item.id)"></button>
+                            </span>
+                          </td> -->
+                        </tr>
+                      </ng-template>
+                    </p-table>
+                  
+                    <p-paginator [rows]="npanxxPageSize" [totalRecords]="npanxxFilterResultLength" [rowsPerPageOptions]="npanxxRowsPerPageOptions" (onPageChange)="npanxxPaginate($event)"></p-paginator>
+                </div>
+            </ng-container>
+
+            <ng-template #InterIntraRate>
                 <div class="card pb-3">
                     <div class="grid">
                         <div class="col-12 xl:col-8">
@@ -440,16 +560,6 @@
                     
                     <div class="flex justify-content-center align-items-center gap-3">
                         <p-paginator [rows]="ratePageSize" [totalRecords]="rateFilterResultLength" [rowsPerPageOptions]="rateRowsPerPageOptions" (onPageChange)="ratePaginate($event)"></p-paginator>
-                    </div>
-                </div>
-            </ng-container>
-
-            <ng-template #InterIntraRate>
-                <div class="card">
-                    <div class="flex justify-content-end">
-                        <span class="p-buttonset">
-                            <button pButton pRipple type="button" size="large" (click)="onGenerate()" label="Generate" icon="pi pi-plus-circle"></button>
-                        </span>
                     </div>
                 </div>
             </ng-template>

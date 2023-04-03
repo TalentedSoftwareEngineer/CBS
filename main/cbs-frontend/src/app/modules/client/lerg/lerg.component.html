@@ -25,12 +25,8 @@
         <th class="text-align-center" [ngClass]="sortActive === 'npanxx' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
           <a (click)="onSortChange('npanxx')">NPANXX</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'npa' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('npa')">NPA</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'nxx' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('nxx')">NXX</a>
-        </th>
+        <th class="text-align-center">NPA</th>
+        <th class="text-align-center">NXX</th>
         <th class="text-align-center" [ngClass]="sortActive === 'thousand' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
           <a (click)="onSortChange('thousand')">X</a>
         </th>

@@ -41,8 +41,8 @@ export class UploadService {
             return
           }
 
-          let inter_rate = defaults.rate
-          let intra_rate = defaults.rate
+          let inter_rate = defaults.default_rate
+          let intra_rate = defaults.default_rate
           let init_duration = defaults.init_duration
           let succ_duration = defaults.succ_duration
 

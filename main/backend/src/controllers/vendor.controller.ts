@@ -90,7 +90,9 @@ export class VendorController {
     customer.last_name = req.last_name
     customer.email = req.email
     customer.status = req.status
-    customer.rate = req.rate
+    customer.rate_type = req.rate_type
+    customer.flat_rate = req.flat_rate
+    customer.default_rate = req.default_rate
     customer.init_duration = req.init_duration
     customer.succ_duration = req.succ_duration
 

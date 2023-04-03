@@ -280,7 +280,7 @@ export class ManageVendorComponent implements OnInit {
       return;
     }
 
-    let data = {
+    let data: any = {
       company_id: this.companyForm.get('company_id')?.value,
       // vendor_name: this.companyForm.get('vendor_name')?.value,
       company_name: this.companyForm.get('company_name')?.value,
@@ -292,10 +292,15 @@ export class ManageVendorComponent implements OnInit {
       billing_method: this.billingForm.get('method')?.value,
       billing_cycle: this.billingForm.get('cycle')?.value,
       billing_start: moment(this.billingForm.get('start')?.value).format('YYYY/MM/DD'),
-      rate: this.ratesForm.get('rate')?.value,
+      default_rate: this.ratesForm.get('default_rate')?.value,
+      rate_type: this.ratesForm.get('rate_type')?.value,
       init_duration: this.ratesForm.get('inidur')?.value,
       succ_duration: this.ratesForm.get('succdur')?.value,
     };
+
+    if(this.selectRateType=='FIXED') {
+      data.flat_rate = this.ratesForm.get('flat_rate')?.value;
+    }
 
     await new Promise<void>(resolve => {
       this.api.createVendor(data).subscribe(res => {

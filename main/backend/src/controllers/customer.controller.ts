@@ -40,12 +40,15 @@ import DataUtils from '../utils/data';
 import {RATE_TYPE, USER_TYPE} from '../constants/configurations';
 import {genSalt, hash} from 'bcryptjs';
 import {RoleService} from '../services';
+import { UserRepository } from '@loopback/authentication-jwt';
 
 @authenticate('jwt')
 export class CustomerController {
   constructor(
     @repository(CustomerRepository)
     public customerRepository : CustomerRepository,
+    @repository(UserRepository)
+    public userRepository : UserRepository,
     @repository(CredentialsRepository)
     public credentialsRepository : CredentialsRepository,
     @repository(CustomerResourceGroupRepository)
@@ -102,7 +105,9 @@ export class CustomerController {
     customer.last_name = req.last_name
     customer.email = req.email
     customer.status = req.status
-    customer.rate = req.rate
+    customer.rate_type = req.rate_type
+    customer.flat_rate = req.flat_rate
+    customer.default_rate = req.default_rate
     customer.init_duration = req.init_duration
     customer.succ_duration = req.succ_duration
 
@@ -428,6 +433,10 @@ export class CustomerController {
     const rate = await this.customerRateRepository.findOne({where: {customer_id: id}})
     if (rate)
       throw new HttpErrors.BadRequest("There are some INTER/INTRA Rates in this customer. Please try again after remove all Rates.")
+
+    const user = await this.userRepository.findOne({where: {customer_id: id}})
+    if (user)
+      throw new HttpErrors.BadRequest("There are some users using this customer.")
 
     const tx = await this.customerRepository.beginTransaction()
 

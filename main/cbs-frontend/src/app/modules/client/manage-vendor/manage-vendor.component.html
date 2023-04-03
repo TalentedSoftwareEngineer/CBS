@@ -198,12 +198,16 @@
                 <label>Rate Type</label>
               </span>
             </div>
-            <div *ngIf="selectRateType=='FIXED'" class="col-12 md:col-6">
-              <span class="p-float-label">
-                <input type="text" class="form-control" id="flat_rate" formControlName="flat_rate" pInputText [(ngModel)]="inputFlatRate" class="{{isRatesFormFieldValid('flat_rate') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="flat_rate">Flat Rate</label>
-              </span>
-            </div>
+
+            <ng-container *ngIf="selectRateType=='FIXED'">
+                <div class="col-12 md:col-6 p-0"></div>
+                <div class="col-12 md:col-6">
+                    <span class="p-float-label">
+                      <input type="text" class="form-control" id="flat_rate" formControlName="flat_rate" pInputText [(ngModel)]="inputFlatRate" class="{{isRatesFormFieldValid('flat_rate') ? 'ng-invalid ng-dirty' : ''}}">
+                      <label for="flat_rate">Flat Rate</label>
+                    </span>
+                </div>
+            </ng-container>
 
             <div class="col-12 md:col-6">
               <span class="p-float-label">

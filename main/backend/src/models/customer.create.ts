@@ -38,10 +38,20 @@ export class CustomerCreateRequest {
   status: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  rate: number;
+  rate_type: string;
+
+  @property({
+    type: 'number',
+  })
+  flat_rate?: number;
+
+  @property({
+    type: 'number',
+  })
+  default_rate?: number;
 
   @property({
     type: 'string',

@@ -71,9 +71,20 @@ export class Customer extends Entity {
   settings?: string;
 
   @property({
+    type: 'string',
+    required: true,
+  })
+  rate_type: string;
+
+  @property({
     type: 'number',
   })
-  rate?: number;
+  flat_rate?: number;
+
+  @property({
+    type: 'number',
+  })
+  default_rate?: number;
 
   @property({
     type: 'number',

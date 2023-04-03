@@ -340,7 +340,7 @@ export class LergController {
         } else {
           lerg = new Lerg()
           lerg.npanxx = npanxx
-          lata.thousand = ""
+          lerg.thousand = ""
           lerg.lata = lata
           lerg.ocn = ocn
           lerg.ocn_name = ocn_name
@@ -360,5 +360,48 @@ export class LergController {
     }
 
     return { completed, failed, message }
+  }
+
+
+  @get('/lergs/rates_count')
+  @response(200, {
+    description: 'Lerg model count',
+    content: {'application/json': {schema: CountSchema}},
+  })
+  async rates_count(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.query.string('value') value: string
+  ): Promise<Count> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+
+    return this.lergRepository.count(DataUtils.getWhere(value,
+      ['npanxx', 'lata','lata_name','ocn','ocn_name','rate_center','country','state','abbre','company','category','thousand','clli','irec','switch_name','switch_type','note'],
+      'npanxx', [{thousands: ' '}]));
+  }
+
+  @get('/lergs/rates')
+  @response(200, {
+    description: 'Array of Lerg model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Lerg, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async rates(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.query.number('limit') limit: number,
+    @param.query.number('skip') skip: number,
+    @param.query.string('order') order: string,
+    @param.query.string('value') value: string
+  ): Promise<Lerg[]> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+
+    return this.lergRepository.find(DataUtils.getFilter(limit, skip, order, value,
+      ['npanxx', 'lata','lata_name','ocn','ocn_name','rate_center','country','state','abbre','company','category','thousand','clli','irec','switch_name','switch_type','note'],
+      'npanxx', [{thousands: ' '}], undefined));
   }
 }

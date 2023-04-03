@@ -288,7 +288,7 @@ export class ManageCustomerComponent implements OnInit {
       }
     }
 
-    let data = {
+    let data: any = {
       company_id: this.companyForm.get('company_id')?.value,
       company_name: this.companyForm.get('company_name')?.value,
       first_name: this.companyForm.get('first_name')?.value,
@@ -299,10 +299,15 @@ export class ManageCustomerComponent implements OnInit {
       billing_method: this.billingForm.get('method')?.value,
       billing_cycle: this.billingForm.get('cycle')?.value,
       billing_start: moment(this.billingForm.get('start')?.value).format('YYYY/MM/DD'),
-      rate: this.ratesForm.get('rate')?.value,
+      default_rate: this.ratesForm.get('default_rate')?.value,
+      rate_type: this.ratesForm.get('rate_type')?.value,
       init_duration: this.ratesForm.get('inidur')?.value,
       succ_duration: this.ratesForm.get('succdur')?.value,
     };
+
+    if(this.selectRateType=='FIXED') {
+      data.flat_rate = this.ratesForm.get('flat_rate')?.value;
+    }
 
     await new Promise<void>(resolve => {
       this.api.createCustomer(data).subscribe(res => {
