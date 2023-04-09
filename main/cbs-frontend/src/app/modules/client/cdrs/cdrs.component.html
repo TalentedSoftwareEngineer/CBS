@@ -1,20 +1,40 @@
-<h4 class="page_title">CDRs Import</h4>
-<div class="card">
-    <div class="grid">
-      <div class="col-12 md:col-5">
-        <div class="p-inputgroup">
-          <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
-          <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
-        </div>
+<h4 class="page_title">CDR Server Management</h4>
+<p-panel header="Configuration" [toggleable]="true" expandIcon="pi pi-chevron-up" collapseIcon="pi pi-chevron-down">
+  <ng-template pTemplate="content">
+      <div class="p-fluid pt-2">
+          <span class="field p-float-label">
+            <input #elmnt_sftp_path type="text" id="sftp_path" name="sftp_path" pInputText [(ngModel)]="input_sftp_path" [disabled]="!isSftpEditing">
+            <label for="sftp_path">Path</label>
+          </span>
       </div>
-
-      <div class="col-12 md:col-7 text-right">
-        <span class="p-buttonset">
-          <button pButton pRipple label="Add New" (click)="openModal('Add')" icon="pi pi-plus"></button>
-          <button pButton pRipple label="Upload" (click)="flag_openUploadDialog=true" icon="pi pi-upload" class="p-button-help"></button>            
+  </ng-template>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end">
+        <button *ngIf="!isSftpEditing" pButton pRipple type="button" icon="pi pi-pencil" label="Edit" class="p-button-rounded p-button-text p-button-warning" (click)="onSFTPEdit()"></button>
+        <span class="p-buttonset" *ngIf="isSftpEditing">
+          <button pButton pRipple (click)="onEditedSFTPSave()" label="Save" icon="pi pi-save" class="p-button-rounded p-button-text p-button-success"></button>
+          <button pButton pRipple (click)="onCancelSFTPEdit()" label="Cancel" icon="pi pi-times" class="p-button-rounded p-button-text p-button-danger"></button>
         </span>
+    </div>
+  </ng-template>
+</p-panel>
+
+<div class="card mt-5">
+  <div class="grid">
+    <div class="col-12 md:col-5">
+      <div class="p-inputgroup">
+        <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
+        <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
       </div>
     </div>
+
+    <div class="col-12 md:col-7 text-right">
+      <span class="p-buttonset">
+        <button pButton pRipple label="Add New" (click)="openModal('Add')" icon="pi pi-plus"></button>
+        <!-- <button pButton pRipple label="Upload" (click)="flag_openUploadDialog=true" icon="pi pi-upload" class="p-button-help"></button>             -->
+      </span>
+    </div>
+  </div>
 </div>
 
 <div class="card">
@@ -22,38 +42,23 @@
   <p-table [value]="import_cdrs" responsiveLayout="stack" [responsive]="true">
     <ng-template pTemplate="header">
       <tr>
-        <th class="text-align-center" [ngClass]="sortActive === 'called' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('called')">Called</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'name' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('name')">Name</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'calling' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('calling')">Calling</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'address' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('address')">Address</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'starttime' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('starttime')">Start Time</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'port' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('port')">Port</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'endtime' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('endtime')">End Time</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'username' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('username')">UserName</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'rgout' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('rgout')">Rg Out</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'start_date' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('start_date')">Start Date</a>
         </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'rgin' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('rgin')">Rg In</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'duration' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('duration')">Duration</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'successful' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-            <a (click)="onSortChange('successful')">Successful</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'server' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('server')">Server</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'reason' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-          <a (click)="onSortChange('reason')">Reason</a>
-        </th>
-        <th class="text-align-center" [ngClass]="sortActive === 'server_ip' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-            <a (click)="onSortChange('server_ip')">Server IP</a>
+        <th class="text-align-center">
+          <a>Active</a>
         </th>
         <th class="text-align-center">Action</th>
       </tr>
@@ -61,48 +66,33 @@
     <ng-template pTemplate="body" let-importCDR_item>
       <tr>
         <td class="text-align-center">
-          <span class="p-column-title">Called</span>
-          {{ importCDR_item.called}}
+          <span class="p-column-title">Name</span>
+          {{ importCDR_item.name}}
         </td>
         <td class="text-align-center">
-          <span class="p-column-title">Calling</span>
-          {{ importCDR_item.calling }}
+          <span class="p-column-title">Address</span>
+          {{ importCDR_item.address }}
         </td>
         <td class="text-align-center">
-          <span class="p-column-title">Start Time</span>
-          {{ importCDR_item.starttime }}
+          <span class="p-column-title">Port</span>
+          {{ importCDR_item.port }}
         </td>
         <td class="text-align-center">
-          <span class="p-column-title">End Time</span>
-          {{ importCDR_item.endtime}}
+          <span class="p-column-title">UserName</span>
+          {{ importCDR_item.username}}
         </td>
         <td class="text-align-center">
-          <span class="p-column-title">Rg Out</span>
-          {{ importCDR_item.rgout }}
+          <span class="p-column-title">Start Date</span>
+          {{ importCDR_item.start_date }}
         </td>
         <td class="text-align-center">
-          <span class="p-column-title">Rg In</span>
-          {{ importCDR_item.rgin }}
-        </td>
-        <td class="text-align-center">
-          <span class="p-column-title">Duration</span>
-          {{ importCDR_item.duration }}
-        </td>
-        <td class="text-align-center">
-          <span class="p-column-title">Successful</span>
-          {{ importCDR_item.successful }}
-        </td>
-        <td class="text-align-center">
-          <span class="p-column-title">Server</span>
-          {{ importCDR_item.server }}
-        </td>
-        <td class="text-align-center">
-          <span class="p-column-title">Reason</span>
-          {{ importCDR_item.reason }}
-        </td>
-        <td class="text-align-center">
-            <span class="p-column-title">Server IP</span>
-            {{ importCDR_item.server_ip }}
+          <span class="p-column-title">Active</span>
+          <ng-container *ngIf="importCDR_item?.is_active">
+            <i class="pi pi-check"></i>
+          </ng-container>
+          <ng-container *ngIf="!importCDR_item?.is_active">
+            <i class="pi pi-times"></i>
+          </ng-container>
         </td>
         <td class="text-align-center">
           <span class="p-buttonset">
@@ -123,68 +113,106 @@
           <div class="grid p-fluid">
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="called" formControlName="called" pInputText [(ngModel)]="inputCalled" class="{{isImportCDRsFormFieldValid('called') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="called">Called</label>
+                <input type="text" class="form-control" id="name" formControlName="name" pInputText [(ngModel)]="inputName" class="{{isImportCDRsFormFieldValid('name') ? 'ng-invalid ng-dirty' : ''}}" pattern="^[\w\d\s_]{1,30}$">
+                <label for="name">Name</label>
               </span>
             </div>
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="calling" formControlName="calling" pInputText [(ngModel)]="inputCalling" class="{{isImportCDRsFormFieldValid('calling') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="calling">Calling</label>
+                <input type="text" class="form-control" id="table_name" formControlName="table_name" pInputText [(ngModel)]="inputTableName" class="{{isImportCDRsFormFieldValid('table_name') ? 'ng-invalid ng-dirty' : ''}}" pattern="^[\w\d\s_]{1,30}$">
+                <label for="table_name">Table Name</label>
               </span>
             </div>
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="starttime" formControlName="starttime" pInputText [(ngModel)]="inputStartTime" class="{{isImportCDRsFormFieldValid('starttime') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="starttime">Start Time</label>
+                <input type="text" class="form-control" id="lnp_server" formControlName="lnp_server" pInputText [(ngModel)]="inputLnpServer" class="{{isImportCDRsFormFieldValid('lnp_server') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="lnp_server">LNP Server</label>
               </span>
             </div>
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="endtime" formControlName="endtime" pInputText [(ngModel)]="inputEndTime" class="{{isImportCDRsFormFieldValid('endtime') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="endtime">End Time</label>
+                <input type="text" class="form-control" id="address" formControlName="address" pInputText [(ngModel)]="inputAddress" pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" class="{{isImportCDRsFormFieldValid('address') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="address">Address</label>
               </span>
             </div>
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="rgout" formControlName="rgout" pInputText [(ngModel)]="inputRgOut" class="{{isImportCDRsFormFieldValid('rgout') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="rgout">Rg Out</label>
+                <input type="number" class="form-control" id="port" formControlName="port" pInputText [(ngModel)]="inputPort" class="{{isImportCDRsFormFieldValid('port') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="port">Port</label>
               </span>
             </div>
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="rgin" formControlName="rgin" pInputText [(ngModel)]="inputRgIn" class="{{isImportCDRsFormFieldValid('rgin') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="rgin">Rg In</label>
+                <p-calendar
+                  class="{{isImportCDRsFormFieldValid('start_date') ? 'ng-invalid ng-dirty form-control' : 'form-control'}}"
+                  id="start_date" 
+                  formControlName="start_date"
+                  [(ngModel)]="inputStartDate"
+                  dateFormat="mm/dd/yy"
+                  [showButtonBar]="true"
+                ></p-calendar>
+                <label for="start_date">Start Date</label>
               </span>
             </div>
+
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="duration" formControlName="duration" pInputText [(ngModel)]="inputDuration" class="{{isImportCDRsFormFieldValid('duration') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="duration">Duration</label>
+                <input type="text" class="form-control" id="path" formControlName="path" pInputText [(ngModel)]="inputPath" class="{{isImportCDRsFormFieldValid('path') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="path">Path</label>
               </span>
             </div>
+
             <div class="md:col-6 col-12">
               <span class="p-float-label">
-                <input type="text" class="form-control" id="successful" formControlName="successful" pInputText [(ngModel)]="inputSuccessful" class="{{isImportCDRsFormFieldValid('successful') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="successful">Successful</label>
+                <input type="text" class="form-control" id="username" formControlName="username" pInputText [(ngModel)]="inputUsername" class="{{isImportCDRsFormFieldValid('username') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="username">UserName</label>
               </span>
             </div>
-            <div class="md:col-6 col-12">
-              <span class="p-float-label">
-                <input type="text" class="form-control" id="server" formControlName="server" pInputText [(ngModel)]="inputServer" class="{{isImportCDRsFormFieldValid('server') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="server">Server</label>
+            
+            <div class="md:col-6 col-12 flex align-items-center justify-content-between">
+              <span>
+                <p-inputSwitch 
+                  formControlName="is_lrn" 
+                  [(ngModel)]="inputIsLrn" 
+                ></p-inputSwitch>
+                <label class="ml-3">LRN</label>
+              </span>
+              <span>
+                <p-inputSwitch 
+                  formControlName="is_rate" 
+                  [(ngModel)]="inputIsRate" 
+                  label="Rate" 
+                ></p-inputSwitch>
+                <label class="ml-3">Rate</label>
+              </span>
+              <span>
+                <p-inputSwitch 
+                  formControlName="is_active" 
+                  [(ngModel)]="inputIsActive" 
+                  label="Active" 
+                ></p-inputSwitch>
+                <label class="ml-3">Active</label>
               </span>
             </div>
-            <div class="md:col-6 col-12">
-              <span class="p-float-label">
-                <input type="text" class="form-control" id="reason" formControlName="reason" pInputText [(ngModel)]="inputReason" class="{{isImportCDRsFormFieldValid('reason') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="reason">Reason</label>
+
+            <div class="md:col-6 col-12 mt-3">
+              <span>
+                <p-inputSwitch 
+                  [(ngModel)]="inputIsPassword" 
+                  formControlName="switchCredential"
+                  (onChange)="inputPublicKey='';inputPassword=''"
+                ></p-inputSwitch>
+                <label class="ml-3">Password or Public Key</label>
               </span>
-            </div>
-            <div class="md:col-6 col-12">
-              <span class="p-float-label">
-                <input type="text" pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" class="form-control" id="server_ip" formControlName="server_ip" pInputText [(ngModel)]="inputServerIp" class="{{isImportCDRsFormFieldValid('server_ip') ? 'ng-invalid ng-dirty' : ''}}">
-                <label for="server_ip">Server IP</label>
+
+              <span *ngIf="inputIsPassword" class="p-float-label mt-3">
+                <input type="password" class="form-control" id="password" formControlName="password" pInputText [(ngModel)]="inputPassword" class="{{isImportCDRsFormFieldValid('password') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="password">Password</label>
+              </span>
+
+              <span *ngIf="!inputIsPassword" class="p-float-label mt-3">
+                <textarea class="{{isImportCDRsFormFieldValid('public_key') ? 'ng-invalid ng-dirty form-control' : 'form-control'}}" id="public_key" formControlName="public_key" [(ngModel)]="inputPublicKey" rows="5" cols="30" pInputTextarea></textarea>
+                <label for="public_key">Public Key</label>
               </span>
             </div>
           </div>
@@ -215,12 +243,12 @@
         <p-table [value]="demoImportCDRs" [scrollable]="true">
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="min-width:100px" class="text-center justify-content-center">Called</th>
-                    <th style="min-width:100px" class="text-center justify-content-center">Calling</th>
-                    <th style="min-width:200px" class="text-center justify-content-center">Start Time</th>
-                    <th style="min-width:200px" class="text-center justify-content-center">End Time</th>
-                    <th style="min-width:100px" class="text-center justify-content-center">Rg Out</th>
-                    <th style="min-width:100px" class="text-center justify-content-center">Rg In</th>
+                    <th style="min-width:100px" class="text-center justify-content-center">Name</th>
+                    <th style="min-width:100px" class="text-center justify-content-center">Address</th>
+                    <th style="min-width:200px" class="text-center justify-content-center">Port</th>
+                    <th style="min-width:200px" class="text-center justify-content-center">UserName</th>
+                    <th style="min-width:100px" class="text-center justify-content-center">Start Date</th>
+                    <th style="min-width:100px" class="text-center justify-content-center">Active</th>
                     <th style="min-width:100px" class="text-center justify-content-center">Duration</th>
                     <th style="min-width:100px" class="text-center justify-content-center">Successful</th>
                     <th style="min-width:100px" class="text-center justify-content-center">Server</th>
@@ -230,12 +258,12 @@
             </ng-template>
             <ng-template pTemplate="body" let-upload>
                 <tr>
-                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.called}}</td>
-                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.calling}}</td>
-                    <td style="min-width:200px" class="text-center justify-content-center">{{upload.starttime}}</td>
-                    <td style="min-width:200px" class="text-center justify-content-center">{{upload.endtime}}</td>
-                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.rgout}}</td>
-                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.rgin}}</td>
+                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.name}}</td>
+                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.address}}</td>
+                    <td style="min-width:200px" class="text-center justify-content-center">{{upload.port}}</td>
+                    <td style="min-width:200px" class="text-center justify-content-center">{{upload.username}}</td>
+                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.start_date}}</td>
+                    <td style="min-width:100px" class="text-center justify-content-center">{{upload.is_active}}</td>
                     <td style="min-width:100px" class="text-center justify-content-center">{{upload.duration}}</td>
                     <td style="min-width:100px" class="text-center justify-content-center">{{upload.successful}}</td>
                     <td style="min-width:100px" class="text-center justify-content-center">{{upload.server}}</td>

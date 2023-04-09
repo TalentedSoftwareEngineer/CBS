@@ -11,3 +11,5 @@ export * from './lerg.controller';
 export * from './vendor.controller';
 export * from './vendor-vendor-rate.controller';
 export * from './vendor-vendor-resource-group.controller';
+export * from './cdr-server.controller';
+export * from './cdr-history.controller';

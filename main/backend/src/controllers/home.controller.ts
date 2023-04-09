@@ -3,7 +3,7 @@
 // import {inject} from '@loopback/core';
 
 
-import {ConfigurationRepository, HistoryRepository, LergRepository} from '../repositories';
+import {CdrServerRepository, ConfigurationRepository, LergHistoryRepository, LergRepository} from '../repositories';
 import {
   post,
   param,
@@ -17,20 +17,18 @@ import {
 } from '@loopback/rest';
 import {repository} from '@loopback/repository';
 import {CONFIGURATIONS, JOB_STATUS} from '../constants/configurations';
-import {LergAutoUpdate} from '../jobs/lerg-auto-update';
-import {History, Lerg} from '../models';
+import {service} from '@loopback/core';
+import {CdrService, FtpService, RoleService} from '../services';
 import DataUtils from '../utils/data';
-import shellExec from 'shell-exec';
-import directoryTree from 'directory-tree';
+import * as fs from "fs";
 
 export class HomeController {
   constructor(
-    @repository(ConfigurationRepository)
-    public configurationRepository : ConfigurationRepository,
-    @repository(LergRepository)
-    public lergRepository : LergRepository,
-    @repository(HistoryRepository)
-    public historyRepository : HistoryRepository,
+    @repository(ConfigurationRepository) public configurationRepository : ConfigurationRepository,
+    @repository(LergRepository) public lergRepository : LergRepository,
+    @repository(LergHistoryRepository) public historyRepository : LergHistoryRepository,
+    @service(CdrService) public cdrService : CdrService,
+    @service(FtpService) public ftpService : FtpService,
   ) {}
 
   @get('/configurations/initSettings', {
@@ -54,13 +52,6 @@ export class HomeController {
     return { banner: banner.value, logo: logo.value };
   }
 
-  HOME_PATH = "/home/dipvadmin/cbs/lerg"
-
-  SCP_SERVER = "208.78.161.26"
-  SCP_USER = "federicoalves"
-  SCP_PASS = "Akula123!"
-  SCP_PATH = "f:/federico/lerg*.zip"
-
   @get('/configurations/test', {
     description: 'Get Banner',
     responses: {
@@ -77,212 +68,145 @@ export class HomeController {
   })
   async test(
   ): Promise<any> {
-    await this.process()
-    return {success: true}
+    console.log("Start CDR Importing-----", new Date().toISOString())
+
+    const servers = await this.cdrService.getActiveServers()
+    if (!servers) {
+      console.log("No Active CDR Servers")
+      return
+    }
+
+    for (let server of servers) {
+      if (Date.parse(server.start_date) < new Date().getTime()) {
+        // started already
+        console.log(server.name + " is starting...")
+
+        await this.cdrService.create(server)
+
+        const listResult = await this.ftpService.list(server)
+        if (listResult.success==false) {
+          console.log(server.name + " > " + listResult.message)
+          continue
+        }
+
+        let is_running = await this.cdrService.isStillRunning(server.id!)
+        if (is_running) {
+          console.log(server.name + " is under processing....")
+          continue
+        }
+
+        let history: any = await this.cdrService.getLastHistory(server.id!)
+
+        const list = listResult.result.filter((item: any) => {
+          if (item.name.startsWith("cdr") && item.name.endsWith("log.gz")) {
+            if (history == null)
+              return true
+
+            if (item.name == history.filename)
+              return history.status == JOB_STATUS.FAILED
+
+            if (item.name > history.filename)
+              return true
+          }
+
+          return false
+        })
+
+        if (list.length==0) {
+          console.log("No List to import")
+          continue
+        }
+
+        this.cdrService.import(server, list)
+        return
+      }
+    }
   }
 
-  public async process() {
-    console.log("Start Lerg Updating-----")
-
-    let npanxxes: string[] = []
-    let message = ""
-    let completed = 0, failed = 0
-
-    // const tx = await this.lergRepository.beginTransaction()
-
-    let history = new History()
-    history.created_at = new Date().toISOString()
-    history.updated_at = new Date().toISOString()
-    history.status = JOB_STATUS.IN_PROGRESS
-    history = await this.historyRepository.create(history)
-
-    while (true) {
-      if (DataUtils.isJobFinished(history.status))
-        break
-
-      if (history.status==JOB_STATUS.IN_PROGRESS) {
-        // download data*.zip
-        const downloaded = await this.download()
-        if (downloaded!="") {
-          history.status = JOB_STATUS.FAILED
-          history.message = downloaded
-        } else {
-          // list files
-          const filename = await this.listFiles()
-          if (filename=="") {
-            history.status = JOB_STATUS.FAILED
-            history.message = "No Updated File"
-          } else {
-            const unzip = await this.unzip(filename)
-            if (unzip!="") {
-              history.status = JOB_STATUS.FAILED
-              history.message = unzip
-            } else {
-              history.filename = filename
-              history.status = JOB_STATUS.DOWNLOADING
-            }
-          }
-        }
-      }
-      else if (history.status == JOB_STATUS.DOWNLOADING) {
-        history.status = JOB_STATUS.IMPORTING
-
-        const csv = require('csv-parser')
-        const fs = require('fs')
-
-        fs.createReadStream(this.HOME_PATH + "/" + history.filename + ".csv")
-          .pipe(csv({ delimiter: ",", headers: false }))
-          .on('data', async (data: any) => {
-            let npa = data['0']
-            let nxx = data['1']
-            let thousands = data['2']
-            let state = data['3']
-            let company = data['4']
-            let ocn = data['5']
-            let rate_center = data['6']
-            let clli = data['7']
-            let assign_date = data['8']
-            let prefix_type = data['9']
-            let switch_name = data['10']
-            let switch_type = data['11']
-            // let lata = worksheet.getCell('M'+index).value
-            // let company = worksheet.getCell('N'+index).value
-            let lata = data['14']
-            let country = data['15']
-
-            if (npa==null || npa=="" || nxx==null || nxx=="") {
-              const err = "NpaNxx is a mandatory field."
-              if (!message.includes(err))
-                message += err + "\n"
-              failed++
-            } else {
-              let npanxx = npa + nxx
-              if (npanxxes.includes(npanxx+thousands))
-                return
-              npanxxes.push(npanxx+thousands)
-
-              let lerg = await this.lergRepository.findOne({where: {and: [{npanxx: npanxx}, {thousand: thousands}]}})
-              if (lerg) {
-                lerg.lata = lata
-                lerg.ocn = ocn
-                if (rate_center!=null && rate_center!="")
-                  lerg.rate_center = rate_center
-                if (country!=null && country!="")
-                  lerg.country = country
-                if (state!=null && state!="")
-                  lerg.state = state
-                if (company!=null && company!="")
-                  lerg.company = company
-                if (thousands!=null && thousands!="")
-                  lerg.thousand = thousands
-                if (clli!=null && clli!="")
-                  lerg.clli = clli
-
-                if (switch_name!=null && switch_name!="")
-                  lerg.switch_name = switch_name
-                if (switch_type!=null && switch_type!="")
-                  lerg.switch_type = switch_type
-
-                if (assign_date!=null && assign_date!="")
-                  lerg.assign_date = assign_date
-                if (prefix_type!=null && prefix_type!="")
-                  lerg.prefix_type = prefix_type
-
-                lerg.updated_at = new Date().toISOString()
-
-                await this.lergRepository.save(lerg)
-                completed++
-
-              } else {
-                lerg = new Lerg()
-                lerg.npanxx = npanxx
-                lerg.lata = lata
-                lerg.ocn = ocn
-                lerg.rate_center = rate_center
-                lerg.country = country
-                lerg.state = state
-                lerg.company = company
-                lerg.thousand = thousands
-                lerg.clli = clli
-                lerg.switch_name = switch_name
-                lerg.switch_type = switch_type
-                lerg.assign_date = assign_date
-                lerg.prefix_type = prefix_type
-
-                lerg.created_at = new Date().toISOString()
-                lerg.updated_at = new Date().toISOString()
-
-                await this.lergRepository.create(lerg)
-                completed++
+  @post('/test/import', {
+    description: 'Import Number',
+    responses: {
+      '200': {
+        description: 'NSRRequest ID',
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                req_id: {
+                  type: "string"
+                }
               }
             }
-          })
-          .on('end', async () => {
-            if (failed == 0 && completed>0)
-              history.status = JOB_STATUS.SUCCESS
-            else if (completed>0)
-              history.status = JOB_STATUS.COMPLETED
-            else
-              history.status = JOB_STATUS.FAILED
-
-            history.message = message
-            history.completed = completed
-            history.failed = failed
-            history.total = completed + failed
-          });
-      }
-      else if (history.status == JOB_STATUS.IMPORTING) {
-        history.message = message
-        history.completed = completed
-        history.failed = failed
-        history.total = completed + failed
-      }
-
-      history.updated_at = new Date().toISOString()
-      await this.historyRepository.save(history)
-
-      // console.log(history)
-      await DataUtils.sleep(1000)
-    }
-
-    this.delete()
-    // await tx.commit()
-  }
-
-  private async download(): Promise<string> {
-    const result = await shellExec("cd " + this.HOME_PATH + " && "
-      + "sudo sshpass -p '"+this.SCP_PASS+"' scp "+this.SCP_USER+"@"+this.SCP_SERVER+":/"+this.SCP_PATH+" .")
-    if (result.code==0)
-      return  ""
-
-    return result.stderr
-  }
-
-  private async listFiles(): Promise<string> {
-    const files: any = await directoryTree(this.HOME_PATH)
-    if (files.children.length==0)
-      return ""
-
-    for (const item of files.children) {
-      if (item.name.toLowerCase().includes("lerg_")) {
-        const history = await this.historyRepository.findOne({where: {and: [{filename: item.name}, {or: [{status: JOB_STATUS.SUCCESS}, {status: JOB_STATUS.COMPLETED}]}]}})
-        if (!history)
-          return item.name
+          }
+        },
       }
     }
+  })
+    async import() {
+      const buffer = fs.readFileSync('c:/tmp/PROSBC2TPA2/cdr_2022-12-13_06-30-00.log')
+      let content = buffer.toString()
+      let items: any = content.split('\n');
+      items = items.map((item: string)=>{
+        let row: any = {};
+        row['StatusType'] = item.split(',')[1];
 
-    return ""
-  }
+        let properties: any[] = item.split(',').filter(dd=>dd.includes('='));
+        properties.forEach(aa=>{
+          row[aa.split('=')[0].replaceAll(":","_")] = aa.split('=')[1].replaceAll("'", "").replaceAll("\r", "").trim();
+        });
 
-  private async unzip(filename: string) {
-    const result = await shellExec("sudo chmod 0777 " + this.HOME_PATH + " && cd " + this.HOME_PATH + " && sudo unzip -p " + filename + " > " + filename + ".csv")
-    if (result.code==0)
-      return ""
-    return result.stderr
-  }
+        if (row["StatusType"]?.toString() == "BEG")
+        {
+            row["TerminationSource_BEG"] = row['TerminationSource'];
+            if (row["Direction"]?.toString() == "originate")
+            {
+                row["Datetime1"] = item.split(',')[0].split('.')[0];
+            }
+            else if (row["Direction"]?.toString() == "answer")
+            {
+                row["Datetime2"] = item.split(',')[0].split('.')[0];
+            }
+        }
+        else if (row["StatusType"]?.toString() == "END")
+        {
+            row["TerminationSource_END"] = row['TerminationSource'];
+            if (row["Direction"]?.toString() == "originate")
+            {
+                row["Datetime3"] = item.split(',')[0].split('.')[0];
+            }
+            else if (row["Direction"]?.toString() == "answer")
+            {
+                row["Datetime4"] = item.split(',')[0].split('.')[0];
+            }
+        }
+        return row;
+      });
 
-  private async delete() {
-    await shellExec("sudo rm -rf " + this.HOME_PATH + "/*")
-  }
 
+      const servers = await this.cdrService.getActiveServers()
+      if (!servers) {
+        console.log("No Active CDR Servers")
+        return
+      }
+
+      for (let server of servers) {
+        await this.cdrService.create(server)
+
+        await DataUtils.sleep(1000)
+
+        for (let item of items) {
+          await this.cdrService.alter(server, item)
+        }
+
+        await DataUtils.sleep(1000)
+
+        for (let item of items) {
+          await this.cdrService.insert(server, item)
+        }
+
+        return
+      }
+
+    }
 }

@@ -1,5 +1,4 @@
 import {Entity, model, property, belongsTo} from '@loopback/repository';
-import {User} from './user.model';
 
 @model({
   name: 'main'

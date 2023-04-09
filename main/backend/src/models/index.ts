@@ -19,5 +19,7 @@ export * from './customer-resource-group.model';
 export * from './bulk-upload';
 export * from './customer-rate.model';
 export * from './lerg.model';
-export * from './history.model';
+export * from './lerg-history.model';
 export * from './vendor-rate.model';
+export * from './cdr-server.model';
+export * from './cdr-history.model';

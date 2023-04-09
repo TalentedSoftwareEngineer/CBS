@@ -250,5 +250,16 @@ export default class DataUtils {
 
         return false
     }
+
+    static isJobProgressing(status: string): boolean {
+        if (status==null)
+            return false
+
+        if (status==JOB_STATUS.SUCCESS || status == JOB_STATUS.COMPLETED
+          || status==JOB_STATUS.FAILED)
+            return false
+
+        return true
+    }
 }
 

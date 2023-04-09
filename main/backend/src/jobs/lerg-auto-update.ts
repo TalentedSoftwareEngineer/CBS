@@ -1,21 +1,20 @@
 import {CronJob, cronJob} from "@loopback/cron";
 import shellExec from 'shell-exec'
-import {History, Lerg} from '../models';
-import {JOB_STATUS} from '../constants/configurations';
+import {LergHistory, Lerg} from '../models';
+import {CONFIGURATIONS, JOB_STATUS} from '../constants/configurations';
 import {repository} from '@loopback/repository';
-import {HistoryRepository, LergRepository} from '../repositories';
+import {ConfigurationRepository, LergHistoryRepository, LergRepository} from '../repositories';
 import directoryTree from 'directory-tree';
 import DataUtils from '../utils/data';
-import {HOME_PATH, SCP_PASS, SCP_PATH, SCP_SERVER, SCP_USER} from '../config';
+import {SCP_PASS, SCP_PATH, SCP_SERVER, SCP_USER} from '../config';
 
 @cronJob()
 export class LergAutoUpdate extends CronJob {
 
   constructor(
-    @repository(LergRepository)
-    public lergRepository : LergRepository,
-    @repository(HistoryRepository)
-    public historyRepository : HistoryRepository,
+    @repository(LergRepository) public lergRepository : LergRepository,
+    @repository(LergHistoryRepository) public historyRepository : LergHistoryRepository,
+    @repository(ConfigurationRepository) public configurationRepository : ConfigurationRepository,
   ) {
     super({
       name: 'lerg-auto-update',
@@ -29,12 +28,13 @@ export class LergAutoUpdate extends CronJob {
 
   public async process() {
     console.log("Start Lerg Updating-----")
+    const LERG_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.LERG_HOME)
 
     let npanxxes: string[] = []
     let message = ""
     let completed = 0, failed = 0
 
-    let history = new History()
+    let history = new LergHistory()
     history.created_at = new Date().toISOString()
     history.updated_at = new Date().toISOString()
     history.status = JOB_STATUS.IN_PROGRESS
@@ -70,11 +70,11 @@ export class LergAutoUpdate extends CronJob {
       else if (history.status == JOB_STATUS.DOWNLOADING) {
         history.status = JOB_STATUS.IMPORTING
 
-        const csv = require('csv-parser')
+        const csv = require('fast-csv')
         const fs = require('fs')
 
-        fs.createReadStream(HOME_PATH + "/" + history.filename + ".csv")
-          .pipe(csv({ delimiter: ",", headers: false }))
+        fs.createReadStream(LERG_HOME + "/" + history.filename)
+          .pipe(csv.parse({ delimiter: ",", headers: false }))
           .on('data', async (data: any) => {
             let npa = data['0']
             let nxx = data['1']
@@ -165,6 +165,10 @@ export class LergAutoUpdate extends CronJob {
             }
           })
           .on('end', async () => {
+            // history.status = JOB_STATUS.COMPLETED
+            // this.finish(history, completed, failed, message)
+          })
+          .on('close', async () => {
             history.status = JOB_STATUS.COMPLETED
             this.finish(history, completed, failed, message)
           })
@@ -186,7 +190,7 @@ export class LergAutoUpdate extends CronJob {
     }
   }
 
-  private async finish(history: History, completed: number, failed:number, message: string) {
+  private async finish(history: LergHistory, completed: number, failed:number, message: string) {
     if (history.status==JOB_STATUS.FAILED) {
 
     } else {
@@ -210,7 +214,8 @@ export class LergAutoUpdate extends CronJob {
   }
 
   private async download(): Promise<string> {
-    const result = await shellExec("cd " + HOME_PATH + " && "
+    const LERG_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.LERG_HOME)
+    const result = await shellExec("cd " + LERG_HOME + " && "
       + "sudo sshpass -p '"+SCP_PASS+"' scp "+SCP_USER+"@"+SCP_SERVER+":/"+SCP_PATH+" .")
     if (result.code==0)
       return  ""
@@ -219,7 +224,8 @@ export class LergAutoUpdate extends CronJob {
   }
 
   private async listFiles(): Promise<string> {
-    const files: any = await directoryTree(HOME_PATH)
+    const LERG_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.LERG_HOME)
+    const files: any = await directoryTree(LERG_HOME)
     if (files.children.length==0)
       return ""
 
@@ -235,13 +241,15 @@ export class LergAutoUpdate extends CronJob {
   }
 
   private async unzip(filename: string) {
-    const result = await shellExec("sudo chmod 0777 " + HOME_PATH + " && cd " + HOME_PATH + " && sudo unzip -p " + filename + " > " + filename + ".csv")
+    const LERG_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.LERG_HOME)
+    const result = await shellExec("sudo chmod 0777 " + LERG_HOME + " && cd " + LERG_HOME + " && sudo unzip -p " + filename + " > " + filename + ".csv")
     if (result.code==0)
       return ""
     return result.stderr
   }
 
   private async delete() {
-    await shellExec("sudo rm -rf " + HOME_PATH + "/*")
+    const LERG_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.LERG_HOME)
+    await shellExec("sudo rm -rf " + LERG_HOME + "/*")
   }
 }

@@ -33,9 +33,10 @@
 			lagThreshold: 3
 		},
 		ajax: {
-			trackMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+			trackMethods: ['GET', 'POST', 'PUT', 'OPTIONS', 'DELETE', 'PATCH'],
 			trackWebSockets: true,
 			ignoreURLs: [
+			  'sockjs-node/*',
       ]
 		}
 	};

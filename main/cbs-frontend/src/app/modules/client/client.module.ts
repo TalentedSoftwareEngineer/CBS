@@ -70,6 +70,8 @@ import { CustomerEditComponent } from './customer-edit/customer-edit.component';
 import { LergComponent } from './lerg/lerg.component';
 import { VendorEditComponent } from './vendor-edit/vendor-edit.component';
 import { CdrsComponent } from './cdrs/cdrs.component';
+import { CdrImportHistoryComponent } from './cdr-import-history/cdr-import-history.component';
+import { CdrLogComponent } from './cdr-log/cdr-log.component';
 
 @NgModule({
   imports: [
@@ -146,6 +148,8 @@ import { CdrsComponent } from './cdrs/cdrs.component';
     LergComponent,
     VendorEditComponent,
     CdrsComponent,
+    CdrImportHistoryComponent,
+    CdrLogComponent,
   ],
   providers: [],
   exports: [

@@ -28,7 +28,7 @@ import {PERMISSIONS} from '../constants/permissions';
 import {MESSAGES} from '../constants/messages';
 import DataUtils from '../utils/data';
 import {CustomerService, UploadService} from '../services';
-import {HOME_PATH, TEMPORARY} from '../config';
+import {TEMPORARY} from '../config';
 import * as fs from "fs";
 import {RATE_TYPE, UPLOAD_METHOD} from '../constants/configurations';
 

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ApiService } from 'src/app/services/api/api.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,7 +10,9 @@ export class DashboardComponent implements OnInit {
   data: any;
     
   options: any;
-  constructor() { }
+  constructor(
+    public api: ApiService,
+  ) { }
 
   ngOnInit(): void {
     this.data = {

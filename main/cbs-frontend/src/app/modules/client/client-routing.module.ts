@@ -4,6 +4,8 @@ import { AccountComponent } from './account/account.component';
 import { BannerComponent } from './banner/banner.component';
 import { BillingOverviewComponent } from './billing-overview/billing-overview.component';
 import { BuyNumberComponent } from './buy-number/buy-number.component';
+import { CdrImportHistoryComponent } from './cdr-import-history/cdr-import-history.component';
+import { CdrLogComponent } from './cdr-log/cdr-log.component';
 import { CdrsComponent } from './cdrs/cdrs.component';
 import { ClientActivitiesComponent } from './client-activities/client-activities.component';
 import { CustomerEditComponent } from './customer-edit/customer-edit.component';
@@ -138,6 +140,16 @@ const routes: Routes = [
         path: 'cdrs_import',
         component: CdrsComponent,
         data: {title: 'CDRs Import', guiSection: 'CDRs Import'},
+      },
+      {
+        path: 'cdr_import_history',
+        component: CdrImportHistoryComponent,
+        data: {title: 'CDR Import History', guiSection: 'CDR Import History'},
+      },
+      {
+        path: 'cdr_log',
+        component: CdrLogComponent,
+        data: {title: 'CDR Log', guiSection: 'CDR Log'},
       },
     ]
   },

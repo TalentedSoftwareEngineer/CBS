@@ -58,7 +58,9 @@ export class LeftmenuComponent implements OnInit {
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LOGO_MANAGEMENT), label: 'Logo Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.logo },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_BANNER_MANAGEMENT), label: 'Banner Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.banner },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LERG_MANAGEMENT), label: 'Lerg Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.lerg },
-            { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_CDRS_IMPORT), label: 'CDRs Import ', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdrs_import }
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_CDRS_IMPORT), label: 'CDR Server Management ', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdrs_import },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.CDR_IMPORT_HISTORY), label: 'CDR Import History', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdr_import_history },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.CDR_LOG), label: 'CDR Log', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdr_log },
           ]
         },
         {

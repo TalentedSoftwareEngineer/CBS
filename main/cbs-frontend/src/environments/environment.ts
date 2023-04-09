@@ -4,9 +4,9 @@
 
 export const environment = {
   production: false,
-  base_uri: 'http://localhost:3000/api/v1',
+  // base_uri: 'http://localhost:3000/api/v1',
   // base_uri: 'http://192.168.115.96:3000/api/v1',
-  // base_uri: 'https://billing-dev.dipvtel.com:3000/api/v1',
+  base_uri: 'https://billing-dev.dipvtel.com:3000/api/v1',
   // base_uri: 'https://208.76.96.30:3000/api/v1',
 };
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import {Location} from '@angular/common';
 import {ConfirmationService, ConfirmEventType, MessageService} from "primeng/api";
 import {ApiService} from "../../../services/api/api.service";
@@ -16,7 +16,9 @@ import { toBase64 } from 'src/app/helper/utils';
   templateUrl: './cdrs.component.html',
   styleUrls: ['./cdrs.component.scss']
 })
-export class CdrsComponent implements OnInit {
+export class CdrsComponent implements OnInit, AfterViewInit {
+
+  @ViewChild('elmnt_sftp_path') elmnt_sftp_path!: ElementRef;
 
   pageSize = 10
   pageIndex = 1
@@ -37,30 +39,36 @@ export class CdrsComponent implements OnInit {
   clickedId: string = '';
 
   cdrsImportForm: FormGroup = new FormGroup({
-    called: new FormControl('', [Validators.required]),
-    calling: new FormControl('', [Validators.required]),
-    starttime: new FormControl('', [Validators.required]),
-    endtime: new FormControl('', [Validators.required]),
-    rgout: new FormControl('', [Validators.required]),
-    rgin: new FormControl('', [Validators.required]),
-    duration: new FormControl(''),
-    successful: new FormControl(''),
-    server: new FormControl(''),
-    reason: new FormControl(''),
-    server_ip: new FormControl(''),
+    name: new FormControl('', [Validators.required]),
+    table_name: new FormControl('', [Validators.required]),
+    address: new FormControl('', [Validators.required]),
+    port: new FormControl('', [Validators.required]),
+    username: new FormControl('', [Validators.required]),
+    path: new FormControl('', [Validators.required]),
+    switchCredential: new FormControl(false),
+    password: new FormControl(''),
+    public_key: new FormControl(''),
+    start_date: new FormControl(null, [Validators.required]),
+    is_rate: new FormControl(false),
+    is_lrn: new FormControl(false),
+    is_active: new FormControl(false),
+    lnp_server: new FormControl(''),
   });
 
-  inputCalled: string = '';
-  inputCalling: string = '';
-  inputStartTime: string = '';
-  inputEndTime: string = '';
-  inputRgOut: string = '';
-  inputRgIn: string = '';
-  inputDuration: string = '';
-  inputSuccessful: string = '';
-  inputServer: string = '';
-  inputReason: string = '';
-  inputServerIp: string = '';
+  inputName: string = '';
+  inputTableName: string = '';
+  inputAddress: string = '';
+  inputPort: string = '';
+  inputUsername: string = '';
+  inputIsPassword: boolean = false;
+  inputPassword: string = '';
+  inputPublicKey: string = '';
+  inputStartDate: any = null;
+  inputIsRate: boolean = false;
+  inputIsLrn: boolean = false;
+  inputIsActive: boolean = false;
+  inputLnpServer: string = '';
+  inputPath: string = '';
 
   uploadActionOptions: any[] = [
     {name: 'Append', value: 'APPEND'},
@@ -84,6 +92,9 @@ export class CdrsComponent implements OnInit {
       server_ip: '208.73.234.36',
     }
   ];
+
+  input_sftp_path: any = ''
+  isSftpEditing: boolean = false
 
   constructor(
     public api: ApiService,
@@ -117,8 +128,19 @@ export class CdrsComponent implements OnInit {
       
     })
 
-    // this.getImportCDRsList();
-    // this.getTotalImportCDRsCount();
+    this.getSftpHosts();
+    this.getImportCDRsList();
+    this.getTotalImportCDRsCount();
+  }
+
+  ngAfterViewInit() {
+    this.elmnt_sftp_path.nativeElement.select();
+  }
+
+  getSftpHosts = async () => {
+    await this.api.getSftpHosts().pipe(tap(res=>{
+      this.input_sftp_path = res.remotePath;
+    })).toPromise();
   }
 
   isImportCDRsFormFieldValid(field: string) {
@@ -146,6 +168,7 @@ export class CdrsComponent implements OnInit {
           response.map(u => {
             u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
             u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.start_date = u.start_date ? moment(new Date(u.start_date)).format('YYYY/MM/DD h:mm:ss A') : '';
           });
 
           for (let item of response) {
@@ -171,11 +194,15 @@ export class CdrsComponent implements OnInit {
       this.resultsLength = res.count
     })).toPromise();
   }
-
   
   openModal = (modal_title: string) => {
     this.modalTitle = modal_title
     this.flag_openDialog = true
+    if(modal_title.toLowerCase()=='edit') {
+      this.cdrsImportForm.controls['table_name'].disable();
+    } else {
+      this.cdrsImportForm.controls['table_name'].enable();
+    }
   }
 
   closeModal = () => {
@@ -193,30 +220,34 @@ export class CdrsComponent implements OnInit {
       return
     }
 
-    let called = this.cdrsImportForm.get('called')?.value;
-    let calling = this.cdrsImportForm.get('calling')?.value;
-    let starttime = this.cdrsImportForm.get('starttime')?.value;
-    let endtime = this.cdrsImportForm.get('endtime')?.value;
-    let rgout = this.cdrsImportForm.get('rgout')?.value;
-    let rgin = this.cdrsImportForm.get('rgin')?.value;
-    let duration = this.cdrsImportForm.get('duration')?.value;
-    let successful = this.cdrsImportForm.get('successful')?.value;
-    let server = this.cdrsImportForm.get('server')?.value;
-    let reason = this.cdrsImportForm.get('reason')?.value;
-    let server_ip = this.cdrsImportForm.get('server_ip')?.value;
+    let name = this.cdrsImportForm.get('name')?.value;
+    let table_name = this.cdrsImportForm.get('table_name')?.value;
+    let address = this.cdrsImportForm.get('address')?.value;
+    let port = Number(this.cdrsImportForm.get('port')?.value);
+    let username = this.cdrsImportForm.get('username')?.value;
+    let password = this.cdrsImportForm.get('password')?.value;
+    let public_key = this.cdrsImportForm.get('public_key')?.value;
+    let start_date = new Date(this.cdrsImportForm.get('start_date')?.value);
+    let is_rate = this.cdrsImportForm.get('is_rate')?.value;
+    let is_lrn = this.cdrsImportForm.get('is_lrn')?.value;
+    let is_active = this.cdrsImportForm.get('is_active')?.value;
+    let lnp_server = this.cdrsImportForm.get('lnp_server')?.value;
+    let path = this.cdrsImportForm.get('path')?.value;
 
     let data = {
-      called: called ? called : '',
-      calling: calling ? calling : '',
-      starttime: starttime ? starttime : '',
-      endtime: endtime ? endtime : '',
-      rgout: rgout ? rgout : '',
-      rgin: rgin ? rgin : '',
-      duration: duration ? duration : '',
-      successful: successful ? successful : '',
-      server: server ? server : '',
-      reason: reason ? reason : '',
-      server_ip: server_ip ? server_ip : '',
+      name: name ? name : '',
+      table_name: table_name ? table_name : '',
+      address: address ? address : '',
+      port: port ? port : '',
+      username: username ? username : '',
+      password: this.inputPassword,
+      public_key: this.inputPublicKey,
+      start_date: start_date,
+      is_rate: Boolean(is_rate),
+      is_lrn: Boolean(is_lrn),
+      is_active: Boolean(is_active),
+      lnp_server: lnp_server ? lnp_server : '',
+      path: path ? path : '',
     }
 
     if(this.modalTitle.toLowerCase()=='add') {
@@ -224,33 +255,37 @@ export class CdrsComponent implements OnInit {
         this.showSuccess('Successfully created!', 'Success');
         this.getImportCDRsList();
         this.getTotalImportCDRsCount();
+        this.closeModal();
       })).toPromise();
     } else if(this.modalTitle.toLowerCase()=='edit') {
       await this.api.updateImportCDR(this.clickedId, data).pipe(tap(res=>{
         this.getImportCDRsList();
         this.showSuccess('Successfully updated!', 'Success');
+        this.closeModal();
       })).toPromise();
     }
-
-    this.closeModal();
   }
 
   onOpenEditModal = (event: any, id: string) => {
     this.clickedId = id;
-    this.api.getImportCDR(id).subscribe(async res => {
+    this.api.getImportCDR(id).subscribe(res => {
       this.cdrsImportForm.setValue({
-        called: res.called,
-        calling: res.calling,
-        starttime: res.starttime,
-        endtime: res.endtime,
-        rgout: res.rgout,
-        rgin: res.rgin,
-        duration: res.duration,
-        successful: res.successful,
-        server: res.server,
-        reason: res.reason,
-        server_ip: res.server_ip,
+        name: res.name,
+        table_name: res.table_name ? res.table_name : '',
+        address: res.address,
+        port: res.port,
+        username: res.username,
+        switchCredential: Boolean(res.password),
+        password: res.password,
+        public_key: res.public_key,
+        start_date: new Date(res.start_date),
+        is_rate: res.is_rate,
+        is_lrn: res.is_lrn,
+        is_active: res.is_active,
+        lnp_server: res.lnp_server,
+        path: res.path ? res.path : ''
       });
+      this.inputPassword = res.password;
       this.openModal('Edit');
     })
   }
@@ -306,13 +341,36 @@ export class CdrsComponent implements OnInit {
         if(!res.failed) {
           this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
         } else if(!res.completed) {
-          this.showInfo(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
         } else {
-          this.showInfo(`Completed Upload!\n\nCompleted: ${res.commented} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
         }
         this.flag_openUploadDialog = false;
       });
     }
+  }
+
+  onSFTPEdit = () => {
+    setTimeout(()=>{
+      // this will make the execution after the above boolean has changed
+      this.elmnt_sftp_path.nativeElement.select();
+    },0);
+    this.isSftpEditing = true;
+  }
+
+  onEditedSFTPSave = () => {
+    let send_data = JSON.stringify({
+      remotePath: this.input_sftp_path
+    });
+    this.api.updateSftpHosts({
+      value: this.input_sftp_path
+    }).subscribe(res=> {
+      this.showSuccess('Successfully Updated!', 'Success');
+    });
+  }
+
+  onCancelSFTPEdit = () => {
+    this.isSftpEditing = false;
   }
 
   onSortChange = async (name: any) => {

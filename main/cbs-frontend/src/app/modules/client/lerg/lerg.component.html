@@ -248,7 +248,7 @@
             </span>
         </div>
         <div class="lg:col-4 col-12 text-right">
-            <button pButton pRipple label="Choose File" (click)="fileInput.click()" icon="pi pi-upload" class="p-button-text"></button>
+            <button pButton pRipple label="Choose File" (click)="fileInput.click()" [disabled]="isUpLoading" icon="pi pi-upload" class="p-button-text"></button>
             <input #fileInput type="file" (click)="onClickUpload($event)" (change)="changeListener($event)" style="display: none" accept=".csv"/>
         </div>
     </div>

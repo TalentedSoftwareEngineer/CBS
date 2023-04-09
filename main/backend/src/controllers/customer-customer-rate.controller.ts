@@ -27,7 +27,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {PERMISSIONS} from '../constants/permissions';
 import {MESSAGES} from '../constants/messages';
 import DataUtils from '../utils/data';
-import {CustomerService} from '../services';
+import {CustomerService, UploadService} from '../services';
 import {TEMPORARY} from '../config';
 import * as fs from "fs";
 import {RATE_TYPE, UPLOAD_METHOD} from '../constants/configurations';
@@ -38,6 +38,7 @@ export class CustomerCustomerRateController {
     @repository(CustomerRateRepository) protected customerRateRepository: CustomerRateRepository,
     @repository(CustomerRepository) protected customerRepository: CustomerRepository,
     @service(CustomerService) protected customerService: CustomerService,
+    @service(UploadService) protected uploadService: UploadService,
   ) { }
 
   @get('/customers/{id}/rates/count', {
@@ -338,117 +339,10 @@ export class CustomerCustomerRateController {
       throw new HttpErrors.BadRequest("Failed to write temporary file.")
     }
 
-    const Excel = require('exceljs');
-    const workbook = new Excel.Workbook();
-    const worksheet = await DataUtils.getWorksheet(workbook, filename, upload.extension)
-      .catch(err => {
-        throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-      })
-
-    if (worksheet==null)
-      throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-
     const defaults = await this.customerService.getDefaultRates(id!)
     if (defaults==null)
       throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
-    // @ts-ignore
-    for (let index=1; index<=worksheet.rowCount; index++)  {
-      if (index==1)
-        continue
-
-      // @ts-ignore
-      let prefix = worksheet.getCell('A'+index).value
-      // @ts-ignore
-      let destination = worksheet.getCell('B'+index).value
-      // @ts-ignore
-      let inter_rate = worksheet.getCell('C'+index).value
-      // @ts-ignore
-      let intra_rate = worksheet.getCell('D'+index).value
-      // @ts-ignore
-      let init_duration = worksheet.getCell('E'+index).value
-      // @ts-ignore
-      let succ_duration = worksheet.getCell('F'+index).value
-
-      if (prefix==null || prefix=="" || destination==null || destination=="") {
-        const err = "Prefix, Destination is a mandatory field."
-        if (!message.includes(err))
-          message += err + "\n"
-        failed++
-        continue
-      }
-
-      // initialize with default rates
-      if (inter_rate==null || inter_rate=="")
-        inter_rate = defaults.default_rate
-      if (intra_rate==null || intra_rate=="")
-        intra_rate = defaults.default_rate
-      if (init_duration==null || init_duration=="")
-        init_duration = defaults.init_duration
-      if (succ_duration==null || succ_duration=="")
-        succ_duration = defaults.succ_duration
-
-      let rates = await this.customerRateRepository.findOne({where: {and: [ {customer_id: id, prefix: prefix} ]}})
-      if (rates) {
-        if (upload.method==UPLOAD_METHOD.APPEND) {
-          const err = "Inter/Intra Rates have already existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        }
-        else if (upload.method==UPLOAD_METHOD.UPDATE) {
-          if (destination!=null && destination!="")
-            rates.destination = destination
-
-          rates.intra_rate = intra_rate
-          rates.inter_rate = inter_rate
-          rates.init_duration = init_duration
-          rates.succ_duration = succ_duration
-
-          rates.updated_by = profile.user.id
-          rates.updated_at = new Date().toISOString()
-
-          await this.customerRateRepository.save(rates)
-          completed++
-        }
-        else if (upload.method==UPLOAD_METHOD.DELETE) {
-          await this.customerRateRepository.deleteById(rates.id)
-          completed++
-        }
-      }
-      else {
-        if (upload.method==UPLOAD_METHOD.DELETE) {
-          const err = "Inter/Intra Rates have not existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        } else {
-          rates = new CustomerRate()
-          rates.customer_id = id!
-
-          rates.prefix = prefix
-          rates.destination = destination
-          rates.intra_rate = intra_rate
-          rates.inter_rate = inter_rate
-          rates.init_duration = init_duration
-          rates.succ_duration = succ_duration
-
-          rates.created_by = profile.user.id
-          rates.created_at = new Date().toISOString()
-          rates.updated_by = profile.user.id
-          rates.updated_at = new Date().toISOString()
-
-          await this.customerRateRepository.create(rates)
-          completed++
-        }
-      }
-    }
-
-    // remove uploaded file
-    try {
-      fs.unlink(filename, ()=>{})
-    } catch (err) {}
-
-    return { completed, failed, message }
+    return this.uploadService.readCustomerRates(id!, profile, upload, filename, defaults)
   }
 }

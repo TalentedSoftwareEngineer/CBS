@@ -260,6 +260,9 @@ export class VendorEditComponent implements OnInit {
   vendor_id: number = -1;
   clickedId = '';
 
+  isUpLoading: boolean = false;
+  isRateUpLoading: boolean = false;
+
   constructor(
     public api: ApiService,
     public store: StoreService,
@@ -669,8 +672,8 @@ export class VendorEditComponent implements OnInit {
 
   }
 
-  onGenerate = () => {
-    // this.onUpdatedPrimarySubmit();
+  onGenerate = async () => {
+    await this.onUpdatedPrimarySubmit();
     this.isGenerating = !this.isGenerating;
     if(this.isGenerating) {
       this.getLergsRatesList();
@@ -809,65 +812,77 @@ export class VendorEditComponent implements OnInit {
 
   changeListener = async (event: any) => {
     if (event.target.files && event.target.files.length > 0) {
-      let file: File = event.target.files.item(0)
-      const items = file.name.split('.')
-      let file_extension = items[items.length - 1]
-      let encoded_file: any = await toBase64(file)
-      encoded_file = encoded_file.split(',')[1];
-      if(encoded_file.length > 1024*1024*25) {
-        this.showWarn('Please select the csv that file size are less than 25MB');
-        return;
-      }
-
-      let body: any = {
-        method: this.uploadMethod,
-        encoded_file: encoded_file,
-        extension: file_extension
-      };
-      this.api.uploadVendorResourceGroup(this.vendor_id, body).subscribe(res=> {
-        if(!res.failed) {
-          this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
-        } else if(!res.completed) {
-          this.showInfo(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
-        } else {
-          this.showInfo(`Completed Upload!\n\nCompleted: ${res.commented} \n\nFailed: ${res.failed} \n\n${res.message}`);
+      this.isUpLoading = true;
+      try {
+        let file: File = event.target.files.item(0)
+        const items = file.name.split('.')
+        let file_extension = items[items.length - 1]
+        let encoded_file: any = await toBase64(file)
+        encoded_file = encoded_file.split(',')[1];
+        if(encoded_file.length > 1024*1024*25) {
+          this.showWarn('Please select the csv that file size are less than 25MB');
+          return;
         }
-        this.getGroupsList();
-        this.getTotalUsersCount();
-        this.closeUploadModal();
-      });
+  
+        let body: any = {
+          method: this.uploadMethod,
+          encoded_file: encoded_file,
+          extension: file_extension
+        };
+        this.api.uploadVendorResourceGroup(this.vendor_id, body).subscribe(res=> {
+          if(!res.failed) {
+            this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
+          } else if(!res.completed) {
+            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          } else {
+            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          }
+          this.getGroupsList();
+          this.getTotalUsersCount();
+          this.closeUploadModal();
+        });
+      } catch (e) {
+      } finally {
+        setTimeout(() => this.isUpLoading = false, 1000);
+      }
     }
   }
 
   changeRateListener = async (event: any) => {
     if (event.target.files && event.target.files.length > 0) {
-      let file: File = event.target.files.item(0)
-      const items = file.name.split('.')
-      let file_extension = items[items.length - 1]
-      let encoded_file: any = await toBase64(file)
-      encoded_file = encoded_file.split(',')[1];
-      if(encoded_file.length > 1024*1024*25) {
-        this.showWarn('Please select the csv that file size are less than 25MB');
-        return;
-      }
-
-      let body: any = {
-        method: this.rateUploadMethod,
-        encoded_file: encoded_file,
-        extension: file_extension
-      };
-      this.api.uploadVendorRate(this.vendor_id, body).subscribe(res=> {
-        if(!res.failed) {
-          this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
-        } else if(!res.completed) {
-          this.showInfo(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
-        } else {
-          this.showInfo(`Completed Upload!\n\nCompleted: ${res.commented} \n\nFailed: ${res.failed} \n\n${res.message}`);
+      this.isRateUpLoading = true;
+      try {
+        let file: File = event.target.files.item(0)
+        const items = file.name.split('.')
+        let file_extension = items[items.length - 1]
+        let encoded_file: any = await toBase64(file)
+        encoded_file = encoded_file.split(',')[1];
+        if(encoded_file.length > 1024*1024*25) {
+          this.showWarn('Please select the csv that file size are less than 25MB');
+          return;
         }
-        this.getRatesList();
-        this.getTotalRatesCount();
-        this.flag_openRateUploadDialog = false;
-      });
+  
+        let body: any = {
+          method: this.rateUploadMethod,
+          encoded_file: encoded_file,
+          extension: file_extension
+        };
+        this.api.uploadVendorRate(this.vendor_id, body).subscribe(res=> {
+          if(!res.failed) {
+            this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
+          } else if(!res.completed) {
+            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          } else {
+            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          }
+          this.getRatesList();
+          this.getTotalRatesCount();
+          this.flag_openRateUploadDialog = false;
+        });
+      } catch (e) {
+      } finally {
+        setTimeout(() => this.isRateUpLoading = false, 1000);
+      }
     }
   }
 
@@ -920,7 +935,7 @@ export class VendorEditComponent implements OnInit {
         this.getTotalRatesCount();
       });
     } else {
-      this.showInfo('Please Input again.');
+      this.showWarn('Please Input again.');
     }
   }
 

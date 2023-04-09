@@ -13,4 +13,11 @@ export class ConfigurationRepository extends DefaultCrudRepository<
   ) {
     super(Configuration, dataSource);
   }
+
+  async getConfig(id: string) {
+    const config: Configuration = await this.findById(id)
+    if (config)
+      return config.value
+    return ""
+  }
 }

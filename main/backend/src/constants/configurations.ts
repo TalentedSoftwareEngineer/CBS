@@ -1,6 +1,8 @@
 export const CONFIGURATIONS = {
   LOGO: 'system.logo',
   BANNER: 'system.banner',
+  CDR_HOME: 'cdr.home',
+  LERG_HOME: 'lerg.home',
 }
 
 export const SUPER_ADMIN_ROLE = 1

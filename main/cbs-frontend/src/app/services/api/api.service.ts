@@ -16,6 +16,11 @@ export class ApiService {
     this.coreApi = environment.base_uri;
   }
 
+  test(): Observable<any> {
+    const url = `${this.coreApi}/test/import`;
+    return this.http.post<any>(url, {});
+  }
+
   public login(data: IUserLogin, rememberedIf: boolean): Observable<object> {
     return this.http.post<IUserToken>(`${this.coreApi}/authenticate`, data).pipe(
       tap(token => this.store.storeToken({ ...token, rememberedIf })),
@@ -549,7 +554,7 @@ export class ApiService {
       order: `${active} ${direction}`,
       value: `${filterValue}`
     }).toString();
-    const url = `${this.coreApi}/lergs?${parametersQuery}`;
+    const url = `${this.coreApi}/cdr-servers?${parametersQuery}`;
     return this.http.get<any[]>(url);
   }
 
@@ -557,28 +562,70 @@ export class ApiService {
     const parametersQuery = new URLSearchParams({
       value: `${filterValue}`
     }).toString();
-    return this.http.get<any>(`${this.coreApi}/lergs/count?${parametersQuery}`);
+    return this.http.get<any>(`${this.coreApi}/cdr-servers/count?${parametersQuery}`);
   }
 
   createImportCDR(data: any): Observable<any> {
-    return this.http.post<any>(`${this.coreApi}/lergs`, data);
+    return this.http.post<any>(`${this.coreApi}/cdr-servers`, data);
   }
 
   getImportCDR(id: string): Observable<any> {
-    const url = `${this.coreApi}/lergs/${id}`;
+    const url = `${this.coreApi}/cdr-servers/${id}`;
     return this.http.get<any>(url);
   }
 
   deleteImportCDRById(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.coreApi}/lergs/${id}`);
+    return this.http.delete<any>(`${this.coreApi}/cdr-servers/${id}`);
   }
 
   updateImportCDR(id: string, data: any): Observable<any> {
-    return this.http.patch<any>(`${this.coreApi}/lergs/${id}`, data);
+    return this.http.patch<any>(`${this.coreApi}/cdr-servers/${id}`, data);
   }
 
-  uploadImportCDR(data: any): Observable<any> {
-    const url = `${this.coreApi}/lergs/upload`;
-    return this.http.post<any>(url, data);
+  // uploadImportCDR(data: any): Observable<any> {
+  //   const url = `${this.coreApi}/lergs/upload`;
+  //   return this.http.post<any>(url, data);
+  // }
+
+  getSftpHosts(): Observable<any> {
+    const url = `${this.coreApi}/configurations/cdr_home`;
+    return this.http.get<any>(url);
+  }
+
+  updateSftpHosts(data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/configurations/cdr_home`, data);
+  }
+
+  //CDRs Import History
+  getImportedCDRsHistoryList(active: string, direction: string, page: number, size: number, filterValue: string, filterServerId: any, status: any): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`,
+      serverId: `${filterServerId}`,
+      status: `${status}`,
+    }).toString();
+    const url = `${this.coreApi}/cdr-histories?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+
+  getImportedCDRsHistoryCount(filterValue: string, filterServerId: any, status: any): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`,
+      serverId: `${filterServerId}`,
+      status: `${status}`,
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/cdr-histories/count?${parametersQuery}`);
+  }
+
+  getCdrServerForFilter(): Observable<any[]> {
+    const url = `${this.coreApi}/cdr-servers/for_filters`;
+    return this.http.get<any[]>(url);
+  }
+
+  getConfigurationsTest(): Observable<any[]> {
+    const url = `${this.coreApi}/configurations/test`;
+    return this.http.get<any[]>(url);
   }
 }

@@ -31,6 +31,8 @@ export const ROUTES = {
     did_number: 'did_number_management',
   },
   reports: {
-    cdrs_import: 'cdrs_import'
+    cdrs_import: 'cdrs_import',
+    cdr_import_history: 'cdr_import_history',
+    cdr_log: 'cdr_log',
   }
 }

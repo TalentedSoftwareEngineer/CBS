@@ -121,13 +121,13 @@
                     </div>
                     <div class="col-12 md:col-6">
                         <span class="p-float-label">
-                        <p-calendar
-                            dateFormat="mm/dd/yy"
-                            [showButtonBar]="true"
-                            formControlName="start"
-                        ></p-calendar>
-                        <label>Billing Start</label>
-                    </span>
+                            <p-calendar
+                                dateFormat="mm/dd/yy"
+                                [showButtonBar]="true"
+                                formControlName="start"
+                            ></p-calendar>
+                            <label>Billing Start</label>
+                        </span>
                     </div>
                     <div class="col-12 md:col-6">
                         <span class="p-float-label">
@@ -362,9 +362,6 @@
                           </th>
                           <th class="text-align-center">NPA</th>
                           <th class="text-align-center">NXX</th>
-                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'thousand' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
-                            <a (click)="onNpanxxSortChange('thousand')">X</a>
-                          </th>
                           <th class="text-align-center" [ngClass]="npanxxSortActive === 'lata' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
                             <a (click)="onNpanxxSortChange('lata')">LATA</a>
                           </th>
@@ -400,10 +397,6 @@
                           <td class="text-align-center">
                             <span class="p-column-title">NXX</span>
                             {{ npanxx_item.nxx }}
-                          </td>
-                          <td class="text-align-center">
-                            <span class="p-column-title">X</span>
-                            {{ npanxx_item.thousand}}
                           </td>
                           <td class="text-align-center">
                             <span class="p-column-title">LATA</span>
@@ -598,7 +591,7 @@
             </span>
         </div>
         <div class="lg:col-4 col-12 text-right">
-            <button pButton pRipple label="Choose File" (click)="fileInput.click()" icon="pi pi-upload" class="p-button-text"></button>
+            <button pButton pRipple label="Choose File" (click)="fileInput.click()" [disabled]="isUpLoading" icon="pi pi-upload" class="p-button-text"></button>
             <input #fileInput type="file" (click)="onClickUpload($event)" (change)="changeListener($event)" style="display: none" accept=".csv"/>
         </div>
     </div>
@@ -683,7 +676,7 @@
             </span>
         </div>
         <div class="lg:col-4 col-12 text-right">
-            <button pButton pRipple label="Choose File" (click)="rateFileInput.click()" icon="pi pi-upload" class="p-button-text"></button>
+            <button pButton pRipple label="Choose File" (click)="rateFileInput.click()" [disabled]="isRateUpLoading" icon="pi pi-upload" class="p-button-text"></button>
             <input #rateFileInput type="file" (click)="onClickUpload($event)" (change)="changeRateListener($event)" style="display: none" accept=".csv"/>
         </div>
     </div>

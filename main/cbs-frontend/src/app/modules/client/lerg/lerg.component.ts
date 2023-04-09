@@ -101,6 +101,8 @@ export class LergComponent implements OnInit {
     }
   ];
 
+  isUpLoading: boolean = false;
+
   constructor(
     public api: ApiService,
     public store: StoreService,
@@ -338,30 +340,36 @@ export class LergComponent implements OnInit {
 
   changeListener = async (event: any) => {
     if (event.target.files && event.target.files.length > 0) {
-      let file: File = event.target.files.item(0)
-      const items = file.name.split('.')
-      let file_extension = items[items.length - 1]
-      let encoded_file: any = await toBase64(file)
-      encoded_file = encoded_file.split(',')[1];
-      if(encoded_file.length > 1024*1024*25) {
-        this.showWarn('Please select the csv that file size are less than 25MB');
-        return;
-      }
-      let body: any = {
-        method: this.uploadMethod,
-        encoded_file: encoded_file,
-        extension: file_extension
-      };
-      this.api.uploadNPANXX(body).subscribe(res=> {
-        if(!res.failed) {
-          this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
-        } else if(!res.completed) {
-          this.showInfo(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
-        } else {
-          this.showInfo(`Completed Upload!\n\nCompleted: ${res.commented} \n\nFailed: ${res.failed} \n\n${res.message}`);
+      this.isUpLoading = true;
+      try {
+        let file: File = event.target.files.item(0)
+        const items = file.name.split('.')
+        let file_extension = items[items.length - 1]
+        let encoded_file: any = await toBase64(file)
+        encoded_file = encoded_file.split(',')[1];
+        if(encoded_file.length > 1024*1024*25) {
+          this.showWarn('Please select the csv that file size are less than 25MB');
+          return;
         }
-        this.flag_openUploadDialog = false;
-      });
+        let body: any = {
+          method: this.uploadMethod,
+          encoded_file: encoded_file,
+          extension: file_extension
+        };
+        this.api.uploadNPANXX(body).subscribe(res=> {
+          if(!res.failed) {
+            this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
+          } else if(!res.completed) {
+            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          } else {
+            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          }
+          this.flag_openUploadDialog = false;
+        });
+      } catch (e) {
+      } finally {
+        setTimeout(() => this.isUpLoading = false, 1000);
+      }
     }
   }
 

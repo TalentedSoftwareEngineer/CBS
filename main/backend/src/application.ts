@@ -14,9 +14,17 @@ import {JWTAuthenticationComponent, TokenServiceBindings, UserServiceBindings} f
 import {CronComponent} from '@loopback/cron';
 import {AuthorizationComponent} from '@loopback/authorization';
 import {CredentialsRepository, UserRepository} from './repositories';
-import {BasicAuthenticationUserService, CustomerService, RoleService, UploadService} from './services';
+import {
+  BasicAuthenticationUserService,
+  CdrService,
+  CustomerService,
+  FtpService,
+  RoleService,
+  UploadService,
+} from './services';
 import {AuthenticationComponent} from '@loopback/authentication';
 import {LergAutoUpdate} from './jobs/lerg-auto-update';
+import {CdrAutoImport} from './jobs/cdr-auto-import';
 
 export {ApplicationConfig};
 
@@ -67,8 +75,13 @@ export class BackendApplication extends BootMixin(
     this.service(RoleService)
     this.service(UploadService)
     this.service(CustomerService)
+    this.service(FtpService)
+    this.service(CdrService)
 
-    const downloadScriptBinding = createBindingFromClass(LergAutoUpdate)
-    this.add(downloadScriptBinding)
+    const lergAutoUpdateBinding = createBindingFromClass(LergAutoUpdate)
+    this.add(lergAutoUpdateBinding)
+
+    const cdrAuoImportBinding = createBindingFromClass(CdrAutoImport)
+    this.add(cdrAuoImportBinding)
   }
 }
