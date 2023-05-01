@@ -23,8 +23,9 @@ import {
   UploadService,
 } from './services';
 import {AuthenticationComponent} from '@loopback/authentication';
-import {LergAutoUpdate} from './jobs/lerg-auto-update';
+import {LergAutoImport} from './jobs/lerg-auto-import';
 import {CdrAutoImport} from './jobs/cdr-auto-import';
+import {LrnAutoImport} from './jobs/lrn-auto-import';
 
 export {ApplicationConfig};
 
@@ -78,10 +79,14 @@ export class BackendApplication extends BootMixin(
     this.service(FtpService)
     this.service(CdrService)
 
-    const lergAutoUpdateBinding = createBindingFromClass(LergAutoUpdate)
-    this.add(lergAutoUpdateBinding)
-
+    // cron jobs
     const cdrAuoImportBinding = createBindingFromClass(CdrAutoImport)
     this.add(cdrAuoImportBinding)
+
+    const lergAutoUpdateBinding = createBindingFromClass(LergAutoImport)
+    this.add(lergAutoUpdateBinding)
+
+    const lrnAutoImportBinding = createBindingFromClass(LrnAutoImport)
+    this.add(lrnAutoImportBinding)
   }
 }

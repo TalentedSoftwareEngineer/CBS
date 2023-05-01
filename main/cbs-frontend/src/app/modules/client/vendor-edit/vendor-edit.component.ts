@@ -10,6 +10,7 @@ import { ROUTES } from 'src/app/app.routes';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { toBase64 } from 'src/app/helper/utils';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-vendor-edit',
@@ -19,7 +20,7 @@ import { toBase64 } from 'src/app/helper/utils';
 export class VendorEditComponent implements OnInit {
 
   //resource group table
-  pageSize = 15
+  pageSize = 100
   pageIndex = 1
   filterName = ''
   filterValue = ''
@@ -27,11 +28,11 @@ export class VendorEditComponent implements OnInit {
   sortDirection = 'ASC'
   resultsLength = -1
   filterResultLength = -1;
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50]
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS
   isLoading = true
 
   //rate table
-  ratePageSize = 10
+  ratePageSize = 100
   ratePageIndex = 1
   rateFilterName = ''
   rateFilterValue = ''
@@ -39,12 +40,12 @@ export class VendorEditComponent implements OnInit {
   rateSortDirection = 'ASC'
   rateResultsLength = -1
   rateFilterResultLength = -1;
-  rateRowsPerPageOptions: any[] = [10, 20, 30, 40, 50]
+  rateRowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS
   rateIsLoading = false;
   rates: any[] = [];
 
   //Npanxx Lerg Rate Table
-  npanxxPageSize = 10
+  npanxxPageSize = 100
   npanxxPageIndex = 1
   npanxxFilterName = ''
   npanxxFilterValue = ''
@@ -53,7 +54,7 @@ export class VendorEditComponent implements OnInit {
   npanxxResultsLength = -1
   npanxxFilterResultLength = -1;
   npanxxIsLoading = true
-  npanxxRowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  npanxxRowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
   npanxxRates: any[] = []
 
   tableFlatRate: string = ''
@@ -95,7 +96,7 @@ export class VendorEditComponent implements OnInit {
   resourceGroupForm: FormGroup = new FormGroup({
     rgid: new FormControl('', Validators.required),
     description: new FormControl(''),
-    partition_id: new FormControl('', Validators.required),
+    partition_id: new FormControl(''),
     ip: new FormControl(),
     active: new FormControl(false, Validators.required),
     direction: new FormControl('INBOUND', Validators.required),
@@ -285,16 +286,18 @@ export class VendorEditComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.WRITE_VENDORS)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
-    })
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.WRITE_VENDORS)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
+
+    // this.store.state$.subscribe(async (state)=> {
+
+    // })
 
     await new Promise<void>(resolve=> {
       this.activatedRoute.queryParams.subscribe((params) => {
@@ -327,10 +330,10 @@ export class VendorEditComponent implements OnInit {
         .pipe(tap(async (groupsRes: any[]) => {
           this.groups = [];
           groupsRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
-            u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
+            // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
 
           for (let group of groupsRes) {
@@ -365,10 +368,10 @@ export class VendorEditComponent implements OnInit {
         .pipe(tap(async (ratesRes: any[]) => {
           this.rates = [];
           ratesRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
-            u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
+            // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
 
           for (let rate of ratesRes) {
@@ -403,8 +406,8 @@ export class VendorEditComponent implements OnInit {
         .pipe(tap(async (response: any[]) => {
           this.npanxxRates = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
           });
 
           for (let item of response) {
@@ -552,11 +555,6 @@ export class VendorEditComponent implements OnInit {
       last_name: this.companyForm.get('last_name')?.value,
       email: this.companyForm.get('email')?.value,
       status: this.companyForm.get('status')?.value,
-      rate_type: "",
-      flat_rate: 0,
-      default_rate: 0,
-      init_duration: 0,
-      succ_duration: 0
     }
 
     await this.api.updateVendorCompany(this.vendor_id, data).pipe(tap(res=>{
@@ -616,12 +614,6 @@ export class VendorEditComponent implements OnInit {
     });
 
     let data: any = {
-      company_id: customer_info.company_id,
-      company_name: customer_info.company_name,
-      first_name: customer_info.first_name,
-      last_name: customer_info.last_name,
-      email: customer_info.email,
-      status: customer_info.status,
       rate_type: this.selectRateType,
       default_rate: Number(this.inputDefaultRate),
       init_duration: Number(this.inputInidur),
@@ -632,7 +624,7 @@ export class VendorEditComponent implements OnInit {
       data.flat_rate = Number(this.inputFlatRate);
     }
 
-    await this.api.updateVendorCompany(this.vendor_id, data).pipe(tap(res=>{
+    await this.api.updateVendorRates(this.vendor_id, data).pipe(tap(res=>{
       this.tableFlatRate = this.inputFlatRate;
       this.showSuccess('Successfully updated!', 'Success');
     })).toPromise();
@@ -665,7 +657,7 @@ export class VendorEditComponent implements OnInit {
   }
 
   onBlurNewPassword = () => {
-    
+
   }
 
   onBlurConfirmPassword = () => {
@@ -760,7 +752,7 @@ export class VendorEditComponent implements OnInit {
       });
     }
   }
-  
+
   setResourceGroupFormData = (id: string) => {
     return new Promise<void>(resolve=>{
       this.api.getVendorResourceGroup(id).subscribe(res=> {
@@ -823,7 +815,7 @@ export class VendorEditComponent implements OnInit {
           this.showWarn('Please select the csv that file size are less than 25MB');
           return;
         }
-  
+
         let body: any = {
           method: this.uploadMethod,
           encoded_file: encoded_file,
@@ -833,9 +825,9 @@ export class VendorEditComponent implements OnInit {
           if(!res.failed) {
             this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
           } else if(!res.completed) {
-            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showError(`Failed: ${res.failed}  ${res.message!='' ? 'Upload failed for the following reasons!' : ''}  \n\n${res.message}`);
           } else {
-            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showWarn(`Completed: ${res.completed} \n\nFailed: ${res.failed}  ${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\n${res.message}`);
           }
           this.getGroupsList();
           this.getTotalUsersCount();
@@ -861,7 +853,7 @@ export class VendorEditComponent implements OnInit {
           this.showWarn('Please select the csv that file size are less than 25MB');
           return;
         }
-  
+
         let body: any = {
           method: this.rateUploadMethod,
           encoded_file: encoded_file,
@@ -871,9 +863,9 @@ export class VendorEditComponent implements OnInit {
           if(!res.failed) {
             this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
           } else if(!res.completed) {
-            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showError(`Failed: ${res.failed}  ${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\n${res.message}`);
           } else {
-            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showWarn(`Completed: ${res.completed} \n\nFailed: ${res.failed}  ${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\n${res.message}`);
           }
           this.getRatesList();
           this.getTotalRatesCount();
@@ -897,7 +889,7 @@ export class VendorEditComponent implements OnInit {
 
   closeRateModal = () => {
    this.flag_openRateDialog = false;
-   this.rateForm.reset(); 
+   this.rateForm.reset();
   }
 
   onRateSubmit = (rateModalTitle: string) => {
@@ -1046,7 +1038,7 @@ export class VendorEditComponent implements OnInit {
   ratePaginate = (event: any) => {
     this.onRatePagination(event.page+1, event.rows);
   }
-  
+
   //Npanxx Lerg Rate table pagination and sort
   onNpanxxSortChange = async (name: any) => {
     this.npanxxSortActive = name;
@@ -1087,5 +1079,5 @@ export class VendorEditComponent implements OnInit {
   showInfo = (msg: string) => {
     this.messageService.add({ key: 'tst', severity: 'info', summary: 'Info', detail: msg });
   };
-  
+
 }

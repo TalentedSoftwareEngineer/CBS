@@ -89,6 +89,27 @@ export class ConfigurationController {
   }
 
   @get('/configurations/initSettings', {
+    description: 'Get Initial Settings',
+    responses: {
+      '200': {
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+            },
+          },
+        }
+      }
+    }
+  })
+  async getInitSettings(
+  ): Promise<any> {
+    const logo = await this.configurationRepository.findById(CONFIGURATIONS.LOGO);
+    const banner = await this.configurationRepository.findById(CONFIGURATIONS.BANNER);
+    return { logo: logo.value, banner: banner.value };
+  }
+
+  @get('/configurations/cdr_home', {
     description: 'Get Banner',
     responses: {
       '200': {

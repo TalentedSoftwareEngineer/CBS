@@ -22,14 +22,14 @@ import {
   Customer, CustomerBilling,
   CustomerCreateRequest,
   CustomerInfo,
-  CustomerPasswordUpdateRequest,
+  CustomerPasswordUpdateRequest, TfnNumber,
   UserInfo,
 } from '../models';
 import {
   CredentialsRepository,
   CustomerRateRepository,
   CustomerRepository,
-  CustomerResourceGroupRepository,
+  CustomerResourceGroupRepository, TfnNumberRepository,
 } from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
@@ -55,6 +55,7 @@ export class CustomerController {
     public customerResourceGroupRepository : CustomerResourceGroupRepository,
     @repository(CustomerRateRepository)
     public customerRateRepository : CustomerRateRepository,
+    @repository(TfnNumberRepository) public tfnNumberRepository : TfnNumberRepository,
     @service(RoleService)
     public roleService : RoleService,
   ) {}
@@ -160,7 +161,7 @@ export class CustomerController {
 
     let fields = ['company_id','company_name','first_name','last_name', 'email'];
     let num_fields = undefined;
-    let custom = undefined;
+    let custom = [{type: USER_TYPE.CUSTOMER}]
     return this.customerRepository.count(DataUtils.getWhere(value, fields, num_fields, custom));
   }
 
@@ -189,7 +190,7 @@ export class CustomerController {
 
     let fields = ['company_id','company_name','first_name','last_name', 'email'];
     let num_fields = undefined;
-    let custom = undefined;
+    let custom = [{type: USER_TYPE.CUSTOMER}]
     let include = []
     include.push({relation: 'created'})
     include.push({relation: 'updated'})
@@ -241,13 +242,13 @@ export class CustomerController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
-            title: 'NewCustomer',
-            exclude: ['id', 'type', 'allowed', 'settings', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            title: 'NewGeneralCustomer',
+            exclude: ['id', 'type', 'allowed', 'settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-    customer: Omit<Customer, 'id,type,allowed,settings,created_at,created_by,updated_at,updated_by'>,
+    customer: Omit<Customer, 'id,type,allowed,settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
@@ -264,6 +265,38 @@ export class CustomerController {
     cus = await this.customerRepository.findOne({where: {company_name: customer.company_name}})
     if (cus && cus.id!=id)
       throw new HttpErrors.BadRequest("Customer have already existed. Please use different Company Name.");
+
+    customer.updated_by = profile.user.id
+    customer.updated_at = new Date().toISOString()
+
+    await this.customerRepository.updateById(id, customer);
+  }
+
+  @patch('/customers/{id}/rates')
+  @response(204, {
+    description: 'Customer PATCH success',
+  })
+  async updateRates(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.number('id') id: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Customer, {
+            title: 'NewRatesCustomer',
+            exclude: ['id', 'type', 'allowed', 'settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+          }),
+        },
+      },
+    })
+      customer: Omit<Customer, 'id,type,allowed,settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    if (customer.rate_type=="")
+      throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
@@ -294,10 +327,18 @@ export class CustomerController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
+    const billing = await this.customerRepository.customerBilling(id).get()
+    if (billing) {
+
+    } else {
+      customer.created_by = profile.user.id
+      customer.created_at = new Date().toISOString()
+    }
+
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
 
-    await this.customerRepository.customerBilling(id).patch(customer);
+    billing ? await this.customerRepository.customerBilling(id).patch(customer) : await this.customerRepository.customerBilling(id).create(customer)
   }
 
   @patch('/customers/{id}/password', {
@@ -407,10 +448,18 @@ export class CustomerController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
+    const additional = await this.customerRepository.customerInfo(id).get()
+    if (additional) {
+
+    } else {
+      customer.created_by = profile.user.id
+      customer.created_at = new Date().toISOString()
+    }
+
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
 
-    await this.customerRepository.customerInfo(id).patch(customer)
+    additional ? await this.customerRepository.customerInfo(id).patch(customer) : await this.customerRepository.customerInfo(id).create(customer)
   }
 
   @del('/customers/{id}')
@@ -434,12 +483,17 @@ export class CustomerController {
     if (rate)
       throw new HttpErrors.BadRequest("There are some INTER/INTRA Rates in this customer. Please try again after remove all Rates.")
 
+    const tfn = await this.tfnNumberRepository.findOne({where: {customer_id: id}})
+    if (tfn)
+      throw new HttpErrors.BadRequest("There are some TFN Numbers assigned to this customer.")
+
     const user = await this.userRepository.findOne({where: {customer_id: id}})
     if (user)
       throw new HttpErrors.BadRequest("There are some users using this customer.")
 
     const tx = await this.customerRepository.beginTransaction()
 
+    await this.customerRepository.customerBilling(id).delete()
     await this.customerRepository.customerInfo(id).delete()
     await this.credentialsRepository.deleteAll({and: [ {user_id: id}, {type: USER_TYPE.CUSTOMER} ]})
     await this.customerRepository.deleteById(id);
@@ -489,4 +543,72 @@ export class CustomerController {
     await this.roleService.createDefaultRoles(customer)
   }
 
+
+  @get('/customers/{id}/tfn-numbers_count')
+  @response(200, {
+    description: 'TfnNumber model count',
+    content: {'application/json': {schema: CountSchema}},
+  })
+  async tfnnumber_count(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.number('id') id: number,
+    @param.query.string('value') value: string,
+  ): Promise<Count> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    let customs = [{customer_id: id}]
+    // let conditions = { or: [ {customer_id: id}, {customer_id: {eq: 0}} ]}
+
+    return this.tfnNumberRepository.count(DataUtils.getWhere(value,
+      ['tfn_num', 'trans_num', 'resp_org', 'price'],
+      'tfn_num,trans_num,price', customs));
+  }
+
+  @get('/customers/{id}/tfn-numbers')
+  @response(200, {
+    description: 'Array of TfnNumber model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(TfnNumber, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async tfnnumbers_find(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.number('id') id: number,
+    @param.query.number('limit') limit: number,
+    @param.query.number('skip') skip: number,
+    @param.query.string('order') order: string,
+    @param.query.string('value') value: string,
+  ): Promise<TfnNumber[]> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    let customs = [{customer_id: id}]
+    // let conditions = { or: [ {customer_id: id}, {customer_id: {eq: 0}} ]}
+
+    let include = []
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+
+    return this.tfnNumberRepository.find(DataUtils.getFilter(limit, skip, order, value,
+      ['tfn_num', 'trans_num', 'resp_org', 'price'],
+      'tfn_num,trans_num,price', customs, include));
+  }
 }

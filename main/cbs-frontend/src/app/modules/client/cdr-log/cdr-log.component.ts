@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import {MessageService} from "primeng/api";
 import {ApiService} from "../../../services/api/api.service";
 import {StoreService} from "../../../services/store/store.service";
@@ -7,6 +7,8 @@ import moment from 'moment';
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
+import { Calendar } from 'primeng/calendar';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-cdr-log',
@@ -15,19 +17,44 @@ import { Router } from '@angular/router';
 })
 export class CdrLogComponent implements OnInit {
 
-  pageSize = 10
+  pageSize = 100
   pageIndex = 1
   filterName = ''
   filterValue = ''
-  sortActive = 'id';
-  sortDirection = 'ASC'
+  sortActive = 'StartTime';
+  sortDirection = 'DESC';
   resultsLength = -1
   filterResultLength = -1;
   isLoading = true
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
 
   cdr_logs: any[] = [];
 
+  durationRange: any = {
+    operator: "",
+    duration: ""
+  };
+  callCountRange: any = {
+    operator: "",
+    call_count: ""
+  };
+
+  serverOptions: any[] = [];
+  selectServer: string = '';
+  directionOptions: any[] = [
+    {name: 'All', value: ''},
+    {name: 'ORIGINATE', value: 'originate'},
+    {name: 'ANSWER', value: 'answer'}
+  ];
+  selectDirection: string = '';
+
+  napOptions: any[] = [];
+  selectNap: string = '';
+
+  selectedDate: any = [new Date(), null];
+  // disabledDays: number[] = DISABLED_ALL_DAYS;
+
+  @ViewChild('calendar') calendar!: Calendar;
 
   constructor(
     public api: ApiService,
@@ -46,23 +73,236 @@ export class CdrLogComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.CDR_LOG)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.CDR_LOG)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
+
+    // this.store.state$.subscribe(async (state)=> {
+
+    // })
+
+    await new Promise<void>(async (resolve)=>{
+      await this.getCdrServer();
+      if(this.selectServer!='') {
+        resolve();
       }
-    })
+    });
+    await this.getNaps();
+    await this.getCDRLogsList();
+    await this.getTotalCDRLogsCount();
+  }
+
+  getCDRLogsList = async () => {
+    this.isLoading = true;
+    try {
+      let filterValue = this.filterValue;
+      let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
+      let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
+
+      // console.log(this.selectedDate[0], new Date(this.selectedDate[0].toUTCString()));
+
+      await this.api.getCDRLogsList(
+        this.sortActive, 
+        this.sortDirection, 
+        this.pageIndex, 
+        this.pageSize, 
+        filterValue, 
+        this.selectServer, 
+        start_at, 
+        end_at,
+        this.callCountRange?.operator,
+        this.callCountRange?.call_count,
+        this.durationRange?.operator,
+        this.durationRange?.duration,
+        /*this.selectDirection*/
+      ).pipe(tap(async (response: any[]) => {
+        this.cdr_logs = [];
+        response.map(u => {
+          u.StartTime = u.StartTime ? moment(new Date(Number(u.StartTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.EndTime = u.EndTime ? moment(new Date(Number(u.EndTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.Duration = u.Duration ? (Math.floor(u.Duration / 60) + ':' + ((u.Duration % 60) > 9 ? (u.Duration % 60) : '0'+(u.Duration % 60))) : '';
+        });
+
+        for (let item of response) {
+          this.cdr_logs.push(item)
+        }
+      })).toPromise();
+
+      this.filterResultLength = -1;
+      await this.api.getCDRLogsCount(
+        filterValue, 
+        this.selectServer, 
+        start_at, 
+        end_at,
+        this.callCountRange?.operator,
+        this.callCountRange?.call_count,
+        this.durationRange?.operator,
+        this.durationRange?.duration,
+        /*this.selectDirection*/
+      ).pipe(tap( res => {
+        this.filterResultLength = res[0].total_count
+      })).toPromise();
+    } catch (e) {
+    } finally {
+      setTimeout(() => this.isLoading = false, 1000);
+    }
+  }
+
+  getTotalCDRLogsCount = async () => {
+    let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
+    let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
+    this.resultsLength = -1
+    await this.api.getCDRLogsCount('', this.selectServer, start_at, end_at, '', '', '', '')
+    .pipe(tap( res => {
+      this.resultsLength = res[0].total_count
+    })).toPromise();
+  }
+
+  getCdrServer = async () => {
+    this.serverOptions = [];
+    await this.api.getCdrServerForFilter()
+      .pipe(tap(async (response: any[]) => {
+        response.forEach(res_item=>{
+          let server = this.serverOptions.find(item=>item.name==res_item.table_name);
+          if(!server)
+            this.serverOptions.push({name: res_item.table_name, value: res_item.table_name});
+        });
+        this.selectServer = this.serverOptions[0].value;
+      })).toPromise();
+  }
+
+  getNaps = async () => {
+    this.api.getNapsForFilter(this.selectServer).subscribe((res: any[])=>{
+      console.log(res);
+      this.napOptions = [{name: 'All', value: ''}, ...res.map(item=>({name: item.name, value: item.name}))];
+    });
+  }
+
+  cdrLogExport = async () => {
+    let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
+    let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
+    await this.api.getCDRLogsCount('', this.selectServer, start_at, end_at, '', '', '', '')
+    .pipe(tap( async (res) => {
+      await this.api.getCDRLogsList(
+        this.sortActive, 
+        this.sortDirection, 
+        this.pageIndex, 
+        res.count, 
+        this.filterValue, 
+        this.selectServer, 
+        start_at, 
+        end_at,
+        this.callCountRange?.operator,
+        this.callCountRange?.call_count,
+        this.durationRange?.operator,
+        this.durationRange?.duration,
+        /*this.selectDirection*/
+      ).pipe(tap(async (response: any[]) => {
+        response.map(u => {
+          u.StartTime = u.StartTime ? moment(new Date(Number(u.StartTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.EndTime = u.EndTime ? moment(new Date(Number(u.EndTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.Duration = u.Duration ? (Math.floor(u.Duration / 60) + ':' + ((u.Duration % 60) > 9 ? (u.Duration % 60) : '0'+(u.Duration % 60))) : '';
+        });
+
+        let cdrLogsContent = '';
+        response.forEach((item, index) => {
+          cdrLogsContent += `\n${item.StartTime}, ${item.EndTime}, ${item.Calling==null?'':item.Calling}, ${item.Called==null?'':item.Called}, ${item.calls==null?'':item.calls}, ${item.Duration==null?'':item.Duration}, ${item.NAP_Originate==null?'':item.NAP_Originate}, ${item.NAP_Answer==null?'':item.NAP_Answer}`;
+        });
+    
+        let data = `Start Time,End Time,Calling,Called,Calls,Duration,NAP Originate,NAP Answer${cdrLogsContent}`
+    
+        const csvContent = 'data:text/csv;charset=utf-8,' + data;
+        const url = encodeURI(csvContent);
+        let fileName = 'CDR_Logs'+moment(new Date()).format('YYYY_MM_DD_hh_mm_ss');
+    
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.setAttribute('download', fileName);
+        tempLink.click();
+      })).toPromise();
+    })).toPromise();
+  } 
+
+  setFilterDurationRage = (event: any) => {
+    this.durationRange = event;  
+  }
+
+  setFilterCallCountRage = (event: any) => {
+    this.callCountRange = event;  
+  }
+
+  onSelectDateRangePicker = (event: any) => {
+    if(this.selectedDate[0] != null && this.selectedDate[1] != null) {
+      debugger;
+      if(moment(this.selectedDate[0]).format('YYYY-MM-DD') == moment(this.selectedDate[1]).format('YYYY-MM-DD'))
+        this.selectedDate = [this.selectedDate[0], null];
+        
+      this.calendar.hideOverlay()
+    }
+  }
+
+  onClickToday = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+    this.selectedDate = [new Date(), null];
+    this.calendar.hideOverlay()
+  }
+
+  onClickYesterday = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+    this.selectedDate = [moment().subtract(1, "days").toDate(), null];
+    this.calendar.hideOverlay()
+  }
+
+  onClickLastWeek = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+
+    let date = new Date();
+    let startDate = new Date(new Date().setDate((date.getDate() - 7) - (date.getDay())));
+    let endDate = new Date(new Date().setDate((date.getDate() - 7) - (date.getDay()) + 6));
+    this.selectedDate = [startDate, endDate];
+    this.calendar.hideOverlay()
+  }
+
+  onClickLastMonth = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+
+    let date = new Date();
+    let startDate = new Date(date.getFullYear(), (date.getMonth() - 1), 1);
+    let endDate = new Date(date.getFullYear(), (date.getMonth() - 1) + 1, 0);
+    this.selectedDate = [startDate, endDate];
+    this.calendar.hideOverlay()
+  }
+
+  onClickThisMonth = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+
+    let date = new Date();
+    let startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    let endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    this.selectedDate = [startDate, endDate];
+    this.calendar.hideOverlay()
+  }
+
+  onClickThisWeek = () => {
+    // this.disabledDays = DISABLED_ALL_DAYS;
+
+    let date = new Date();
+    let startDate = new Date(new Date().setDate((date.getDate()) - (date.getDay())));
+    let endDate = new Date(new Date().setDate((date.getDate()) - (date.getDay()) + 6));
+    this.selectedDate = [startDate, endDate];
+    this.calendar.hideOverlay()
   }
 
   onSortChange = async (name: any) => {
     this.sortActive = name;
     this.sortDirection = this.sortDirection === 'ASC' ? 'DESC' : 'ASC';
     this.pageIndex = 1;
-    // await this.getImportedCDRsHistoryList();
+    await this.getCDRLogsList();
   }
 
   onFilter = (event: Event) => {
@@ -71,14 +311,14 @@ export class CdrLogComponent implements OnInit {
     this.filterValue = (event.target as HTMLInputElement).value;
   }
 
-  // onClickFilter = () => this.getImportedCDRsHistoryList();
+  onClickFilter = () => this.getCDRLogsList();
 
   onPagination = async (pageIndex: any, pageRows: number) => {
     this.pageSize = pageRows;
     const totalPageCount = Math.ceil(this.filterResultLength / this.pageSize);
     if (pageIndex === 0 || pageIndex > totalPageCount) { return; }
     this.pageIndex = pageIndex;
-    // await this.getImportedCDRsHistoryList();
+    await this.getCDRLogsList();
   }
 
   paginate = (event: any) => {

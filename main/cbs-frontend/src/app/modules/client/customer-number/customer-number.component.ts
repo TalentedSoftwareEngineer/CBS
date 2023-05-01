@@ -9,7 +9,7 @@ export class CustomerNumberComponent implements OnInit {
 
   constructor() { }
 
-  ngOnInit(): void {
+  async ngOnInit() {
   }
 
 }

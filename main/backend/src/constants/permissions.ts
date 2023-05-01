@@ -13,6 +13,10 @@ export const PERMISSIONS = {
     WRITE_CDR_SERVER_MANAGEMENT: 8,
 
     CDR_IMPORT_HISTORY: 9,
+    CDR_LOG: 10,
+
+    READ_LRN_MANAGEMENT: 11,
+    WRITE_LRN_MANAGEMENT: 12,
 
     // Client Manangement
     READ_CUSTOMERS: 101,

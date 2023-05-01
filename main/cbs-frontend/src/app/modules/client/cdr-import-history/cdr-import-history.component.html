@@ -39,8 +39,8 @@
   <p-table [value]="imported_cdrs" responsiveLayout="stack" [responsive]="true">
     <ng-template pTemplate="header">
       <tr>
-        <th class="text-align-center">
-          <a>Server</a>
+        <th class="text-align-center" [ngClass]="sortActive === 'server_id' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('server_id')">Server</a>
         </th>
         <th class="text-align-center" [ngClass]="sortActive === 'filename' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
           <a (click)="onSortChange('filename')">File Name</a>

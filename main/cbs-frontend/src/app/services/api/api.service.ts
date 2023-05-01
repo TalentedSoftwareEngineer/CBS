@@ -157,6 +157,10 @@ export class ApiService {
     return this.http.patch<any>(`${this.coreApi}/customers/${id}/general`, data);
   }
 
+  updateRates(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/customers/${id}/rates`, data);
+  }
+
   updateCredential(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/customers/${id}/password`, data);
   }
@@ -209,7 +213,6 @@ export class ApiService {
   createUser(data: any): Observable<IUser> {
     return this.http.post<IUser>(`${this.coreApi}/users`, data);
   }
-
 
   getAuditionedUsername(id: number): Observable<IAuditionedUser> {
     const url = `${this.coreApi}/users/${id}/auditioned`;
@@ -439,6 +442,10 @@ export class ApiService {
     return this.http.patch<any>(`${this.coreApi}/vendors/${id}/general`, data);
   }
 
+  updateVendorRates(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/vendors/${id}/rates`, data);
+  }
+
   updateVendorCredential(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/vendors/${id}/password`, data);
   }
@@ -450,7 +457,7 @@ export class ApiService {
   updateVendorAdditional(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/vendors/${id}/additional`, data);
   }
-  
+
   //Vendor Resourse Group
   getVendorGroupsList(active: string, direction: string, page: number, size: number, filterValue: string, directionFilter: any, activeFilter: any, id: number): Observable<any[]> {
     const parametersQuery = new URLSearchParams({
@@ -628,4 +635,175 @@ export class ApiService {
     const url = `${this.coreApi}/configurations/test`;
     return this.http.get<any[]>(url);
   }
+
+  //CDRs Logs
+  getCDRLogsList(
+    active: string,
+    direction: string,
+    page: number,
+    size: number,
+    filterValue: string,
+    filterTable: string,
+    start_at: number,
+    end_at: number,
+    calls_op: string,
+    calls: string,
+    duration_op: string,
+    duration: string,
+    /*cdr_direction: string*/
+  ): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`,
+      table: `${filterTable}`,
+      start_at: `${start_at}`,
+      end_at: `${end_at}`,
+      calls_op: `${calls_op}`,
+      calls: `${calls}`,
+      duration_op: `${duration_op}`,
+      duration: `${duration}`,
+      // direction: `${cdr_direction}`,
+    }).toString();
+    const url = `${this.coreApi}/cdr-logs?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+  
+  getCDRLogsCount(
+    filterValue: string,
+    filterTable: string,
+    start_at: number,
+    end_at: number,
+    calls_op: string,
+    calls: string,
+    duration_op: string,
+    duration: string,
+    /* cdr_direction: string*/
+  ): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`,
+      table: `${filterTable}`,
+      start_at: `${start_at}`,
+      end_at: `${end_at}`,
+      calls_op: `${calls_op}`,
+      calls: `${calls}`,
+      duration_op: `${duration_op}`,
+      duration: `${duration}`,
+      // direction: `${cdr_direction}`,
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/cdr-logs/count?${parametersQuery}`);
+  }
+
+  getNapsForFilter(filterTable: string): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      table: `${filterTable}`
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/cdr-logs/nap?${parametersQuery}`);
+  }
+
+  //TFN Numbers
+  getTfnNumbersList(active: string, direction: string, page: number, size: number, filterValue: string, customerId: any): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`,
+      customerId: `${customerId}`,
+    }).toString();
+    const url = `${this.coreApi}/tfn-numbers?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+
+  getTfnNumberCount(filterValue: string, customerId: any): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`,
+      customerId: `${customerId}`,
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/tfn-numbers/count?${parametersQuery}`);
+  }
+
+  createTfnNumber(data: any): Observable<any> {
+    return this.http.post<any>(`${this.coreApi}/tfn-numbers`, data);
+  }
+
+  getTfnNumber(id: string): Observable<any> {
+    const url = `${this.coreApi}/tfn-numbers/${id}`;
+    return this.http.get<any>(url);
+  }
+
+  deleteTfnNumberById(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.coreApi}/tfn-numbers/${id}`);
+  }
+
+  updateTfnNumber(id: string, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/tfn-numbers/${id}`, data);
+  }
+
+  uploadTfnNumber(data: any): Observable<any> {
+    const url = `${this.coreApi}/tfn-numbers/upload`;
+    return this.http.post<any>(url, data);
+  }
+
+  //Customer Edit
+
+  getCustomerTfnNumbersList(active: string, direction: string, page: number, size: number, filterValue: string, customerId: any): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`,
+    }).toString();
+    const url = `${this.coreApi}/customers/${customerId}/tfn-numbers?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+
+  getCustomerTfnNumberCount(filterValue: string, customerId: any): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`,
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/customers/${customerId}/tfn-numbers_count?${parametersQuery}`);
+  }
+
+  //LRN
+  getLrnsList(active: string, direction: string, page: number, size: number, filterValue: string): Observable<any[]> {
+    const parametersQuery = new URLSearchParams({
+      limit: `${size}`,
+      skip: `${(page - 1) * size}`,
+      order: `${active} ${direction}`,
+      value: `${filterValue}`
+    }).toString();
+    const url = `${this.coreApi}/lrn-numbers?${parametersQuery}`;
+    return this.http.get<any[]>(url);
+  }
+
+  getLrnCount(filterValue: string): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      value: `${filterValue}`
+    }).toString();
+    return this.http.get<any>(`${this.coreApi}/lrn-numbers/count?${parametersQuery}`);
+  }
+
+  createLrn(data: any): Observable<any> {
+    return this.http.post<any>(`${this.coreApi}/lrn-numbers`, data);
+  }
+
+  getLrn(id: string): Observable<any> {
+    const url = `${this.coreApi}/lrn-numbers/${id}`;
+    return this.http.get<any>(url);
+  }
+
+  deleteLrnById(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.coreApi}/lrn-numbers/${id}`);
+  }
+
+  updateLrn(id: string, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/lrn-numbers/${id}`, data);
+  }
+
+  // uploadLrns(data: any): Observable<any> {
+  //   const url = `${this.coreApi}/lrn-numbers/upload`;
+  //   return this.http.post<any>(url, data);
+  // }
+
 }

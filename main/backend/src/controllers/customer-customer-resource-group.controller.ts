@@ -97,8 +97,18 @@ export class CustomerCustomerResourceGroupController {
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include = []
-    include.push({relation: 'created'})
-    include.push({relation: 'updated'})
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
 
     let custom: any[] = [ {customer_id: id} ]
     if (directionFilter!="")
@@ -159,7 +169,7 @@ export class CustomerCustomerResourceGroupController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    if (customerResourceGroup.rgid=="" || customerResourceGroup.partition_id==null || customerResourceGroup.partition_id<=0)
+    if (customerResourceGroup.rgid=="")
       throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
     const rg = await this.customerResourceGroupRepository.findOne({where: {rgid: customerResourceGroup.rgid}})
@@ -202,8 +212,8 @@ export class CustomerCustomerResourceGroupController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    if (customerResourceGroup.partition_id==null || customerResourceGroup.partition_id<=0)
-      throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
+    // if (customerResourceGroup.partition_id==null || customerResourceGroup.partition_id<=0)
+    //   throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
     customerResourceGroup.updated_by = profile.user.id
     customerResourceGroup.updated_at = new Date().toISOString()
@@ -271,7 +281,7 @@ export class CustomerCustomerResourceGroupController {
               encoded_file: {
                 type: "string",
                 description: 'Base64 encoded text',
-                example: "RGID, Partition ID, IP, Direction, Description"
+                example: "NAP ID, Partition ID, IP, Direction, Description"
               },
               extension: {
                 type: "string",
@@ -287,7 +297,7 @@ export class CustomerCustomerResourceGroupController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    if (upload.method=="" || upload.encoded_file=="" || upload.extension=="")
+    if (upload.method == "" || upload.encoded_file == "" || upload.extension == "")
       throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
     const filename = TEMPORARY + "rg_"
@@ -295,121 +305,12 @@ export class CustomerCustomerResourceGroupController {
       + Math.random().toString(36).substring(2, 15)
       + "." + upload.extension
 
-    let completed = 0, failed = 0
-    let message: string = ""
-
     try {
       fs.writeFileSync(filename, upload.encoded_file, 'base64')
     } catch (err) {
       throw new HttpErrors.BadRequest("Failed to write temporary file.")
     }
 
-    const Excel = require('exceljs');
-    const workbook = new Excel.Workbook();
-    const worksheet = await DataUtils.getWorksheet(workbook, filename, upload.extension)
-      .catch(err => {
-        throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-      })
-
-    if (worksheet==null)
-      throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-
-    // @ts-ignore
-    for (let index=1; index<=worksheet.rowCount; index++)  {
-      if (index==1)
-        continue
-
-      // @ts-ignore
-      let rgid = worksheet.getCell('A'+index).value
-      // @ts-ignore
-      let pid = worksheet.getCell('B'+index).value
-      // @ts-ignore
-      let ip = worksheet.getCell('C'+index).value
-      // @ts-ignore
-      let direction = worksheet.getCell('D'+index).value
-      // @ts-ignore
-      let description = worksheet.getCell('E'+index).value
-
-      if (rgid==null || rgid=="" || pid==null || pid=="") {
-        const err = "RGID, PartitionID is a mandatory field."
-        if (!message.includes(err))
-          message += err + "\n"
-        failed++
-        continue
-      }
-
-      if (direction==null || direction=="")
-        direction = "INBOUND"
-      else if (direction.toUpperCase()=="OUTBOUND" || direction.toUpperCase()=="O")
-        direction = "OUTBOUND"
-      else
-        direction = "INBOUND"
-
-      // TODO - validate ip address.
-
-      let rg: any = await this.customerResourceGroupRepository.findOne({where: {rgid: rgid}})
-      if (rg) {
-        if (upload.method==UPLOAD_METHOD.APPEND || rg.customer_id!=id) {
-          const err = "Resource Group have already existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        }
-        else if (upload.method==UPLOAD_METHOD.UPDATE) {
-          rg.partition_id = pid
-          if (ip!=null && ip!="")
-            rg.ip = ip
-
-          if (description!=null && description!="")
-            rg.description = description
-
-          rg.direction = direction
-          rg.active = true
-
-          rg.updated_by = profile.user.id
-          rg.updated_at = new Date().toISOString()
-
-          await this.customerResourceGroupRepository.save(rg)
-          completed++
-        }
-        else if (upload.method==UPLOAD_METHOD.DELETE) {
-          await this.customerResourceGroupRepository.deleteById(rg.id)
-          completed++
-        }
-      }
-      else {
-        if (upload.method==UPLOAD_METHOD.DELETE) {
-          const err = "Resource Group have not existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        } else {
-          rg = new CustomerResourceGroup()
-          rg.customer_id = id!
-          rg.rgid = rgid
-          rg.partition_id = pid
-          rg.ip = ip
-          rg.description = description
-          rg.direction = direction
-          rg.active = true
-
-          rg.created_by = profile.user.id
-          rg.created_at = new Date().toISOString()
-          rg.updated_by = profile.user.id
-          rg.updated_at = new Date().toISOString()
-
-          await this.customerResourceGroupRepository.create(rg)
-          completed++
-        }
-      }
-    }
-
-    // remove uploaded file
-    try {
-      fs.unlink(filename, ()=>{})
-    } catch (err) {}
-
-    return { completed, failed, message }
+    return this.uploadService.readCustomerNAP(id!, profile, upload, filename)
   }
-
 }

@@ -3,7 +3,7 @@ import {Location} from '@angular/common';
 import {ConfirmationService, ConfirmEventType, MessageService} from "primeng/api";
 import {ApiService} from "../../../services/api/api.service";
 import {StoreService} from "../../../services/store/store.service";
-import { ROWS_PER_PAGE_OPTIONS } from '../../constants';
+import { PAGE_SIZE_OPTIONS, ROWS_PER_PAGE_OPTIONS } from '../../constants';
 import { tap } from "rxjs/operators";
 import moment from 'moment';
 import { IRole, IPrivilege } from "../../../models/user";
@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
 export class ManageRolesComponent implements OnInit {
 
   // roles variables
-  pageSize = 10
+  pageSize = 100
   pageIndex = 1
   roles: any[] = []
   privileges: any[] = []
@@ -30,7 +30,7 @@ export class ManageRolesComponent implements OnInit {
   resultsLength = -1
   filterResultLength = -1;
   isLoading = true
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
 
   flag_openDialog = false
 
@@ -64,16 +64,16 @@ export class ManageRolesComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.READ_ROLES)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.READ_ROLES)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
 
+    this.store.state$.subscribe(async (state)=> {
       if(state.user.permissions?.indexOf(PERMISSIONS.WRITE_ROLES) == -1)
         this.write_permission = false;
       else
@@ -101,8 +101,8 @@ export class ManageRolesComponent implements OnInit {
         .pipe(tap(async (rolesRes: IRole[]) => {
           this.roles = [];
           rolesRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
           });
 
           for (let role of rolesRes) {

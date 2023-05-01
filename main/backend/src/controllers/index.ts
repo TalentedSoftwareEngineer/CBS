@@ -13,3 +13,6 @@ export * from './vendor-vendor-rate.controller';
 export * from './vendor-vendor-resource-group.controller';
 export * from './cdr-server.controller';
 export * from './cdr-history.controller';
+export * from './cdr-log.controller';
+export * from './tfn-number.controller';
+export * from './lrn-number.controller';

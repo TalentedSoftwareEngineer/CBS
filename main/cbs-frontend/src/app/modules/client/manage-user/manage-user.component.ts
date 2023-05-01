@@ -9,7 +9,7 @@ import {IUser, IRole} from "../../../models/user";
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
-import { EMAIL_REG_EXP, SUPER_ADMIN_ROLE_ID } from '../../constants';
+import { EMAIL_REG_EXP, PAGE_SIZE_OPTIONS, SUPER_ADMIN_ROLE_ID } from '../../constants';
 
 @Component({
   selector: 'app-manage-user',
@@ -19,7 +19,7 @@ import { EMAIL_REG_EXP, SUPER_ADMIN_ROLE_ID } from '../../constants';
 export class ManageUserComponent implements OnInit {
 
   // users variables
-  pageSize = 10
+  pageSize = 100
   pageIndex = 1
   filterName = ''
   filterValue = ''
@@ -29,7 +29,7 @@ export class ManageUserComponent implements OnInit {
   sortDirection = 'ASC'
   resultsLength = -1
   filterResultLength = -1;
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50]
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS
   isLoading = true
 
   users: any[] = []
@@ -101,16 +101,16 @@ export class ManageUserComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.READ_USERS)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.READ_USERS)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
 
+    this.store.state$.subscribe(async (state)=> {
       if(state.user.permissions?.indexOf(PERMISSIONS.WRITE_USERS) == -1)
         this.write_permission = false;
       else
@@ -142,8 +142,8 @@ export class ManageUserComponent implements OnInit {
         .pipe(tap(async (usersRes: IUser[]) => {
           this.users = [];
           usersRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
             u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
             u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });

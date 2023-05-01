@@ -10,7 +10,8 @@ export const ROUTES = {
     account: 'account',
     logo: 'logo',
     banner: 'banner',
-    lerg: 'lerg'
+    lerg: 'lerg',
+    lrn: 'lrn'
   },
   client_mng: {
     customer: 'manage_customer',

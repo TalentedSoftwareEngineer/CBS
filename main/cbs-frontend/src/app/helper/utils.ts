@@ -220,6 +220,19 @@ export const scrollToTop = () => {
   document.body.scrollTop = document.documentElement.scrollTop = 0
 }
 
+export const toUtcDate = (date: Date): Date => {
+  let time_difference = Date.UTC(
+    date.getFullYear(), 
+    date.getMonth(), 
+    date.getDate(),
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds(),
+    date.getMilliseconds(),
+  ) - date.getTime();
+  return new Date(date.getTime() - time_difference);
+}
+
 export const weeks = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
 ]

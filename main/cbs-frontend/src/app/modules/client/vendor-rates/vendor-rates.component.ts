@@ -8,6 +8,7 @@ import moment from 'moment';
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-vendor-rates',
@@ -28,13 +29,13 @@ export class VendorRatesComponent implements OnInit {
   filterValue: string = '';
 
   // users variables
-  pageSize = 15
+  pageSize = 100
   pageIndex = 1
   sortActive = 'id' //sortActive = {table field name}
   sortDirection = 'ASC'
   resultsLength = -1
   filterResultLength = -1;
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50]
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS
   isLoading = true;
 
   vendor_rates: any[] = [{id: 1, name: 'DIP_CPR_GEN1', phone: '781382 2222', email: 'alism@382com.com', status: 'Active', type: 'Vendor'}];

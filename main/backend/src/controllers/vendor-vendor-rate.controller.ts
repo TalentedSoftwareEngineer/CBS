@@ -92,8 +92,18 @@ export class VendorVendorRateController {
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include: any[] = []
-    // include.push({relation: 'created'})
-    // include.push({relation: 'updated'})
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
 
     let custom: any[] = [ {customer_id: id} ]
 

@@ -7,6 +7,7 @@ import moment from 'moment';
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-cdr-import-history',
@@ -15,16 +16,16 @@ import { Router } from '@angular/router';
 })
 export class CdrImportHistoryComponent implements OnInit {
 
-  pageSize = 10
+  pageSize = 100
   pageIndex = 1
   filterName = ''
   filterValue = ''
-  sortActive = 'id';
-  sortDirection = 'ASC'
+  sortActive = 'updated_at';
+  sortDirection = 'DESC'
   resultsLength = -1
   filterResultLength = -1;
   isLoading = true
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
 
   imported_cdrs: any[] = [];
 
@@ -58,18 +59,20 @@ export class CdrImportHistoryComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.CDR_IMPORT_HISTORY)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
-    })
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.CDR_IMPORT_HISTORY)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
 
-    this.getCdrServerForFilter();
+    // this.store.state$.subscribe(async (state)=> {
+
+    // })
+
+    await this.getCdrServerForFilter();
     this.getImportedCDRsHistoryList();
     this.getTotalImportedCDRsHistoryCount();
 
@@ -85,10 +88,11 @@ export class CdrImportHistoryComponent implements OnInit {
       await this.api.getImportedCDRsHistoryList(this.sortActive, this.sortDirection, this.pageIndex, this.pageSize, filterValue, this.selectFilterServer, this.selectFilterStatus)
         .pipe(tap(async (response: any[]) => {
           this.imported_cdrs = [];
-          response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.server_id = u.server_id ? this.getServerName(u.server_id, name=>{u.server_id=name}) : '';
+          response.map(async u => {
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.server_id = u.server_id ? await this.getServerName(this.serverOptions, u.server_id, name=>{u.server_id=name}) : '';
+            u.server_id = u.server_id ? this.serverOptions.find(item=>item.value == u.server_id)?.name : '';
           });
 
           for (let item of response) {
@@ -122,10 +126,9 @@ export class CdrImportHistoryComponent implements OnInit {
       })).toPromise();
   }
 
-  getServerName = async (server_id: number, callback: (name: string)=>void) => {
-    this.api.getImportCDR(String(server_id)).subscribe(async res => {
-      callback(res.name);
-    })
+  getServerName = async (server: any[], server_id: number, callback: (name: string)=>void) => {
+    let tmp_name = server.find(item=>item.value == server_id)?.name;
+    callback(tmp_name);
   }
 
   onSortChange = async (name: any) => {

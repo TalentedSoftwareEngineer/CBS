@@ -79,6 +79,11 @@ export class CdrServerController {
       cdrServer.path = cdrServer.path.substring(0, cdrServer.path.length-1)
     cdrServer.table_name = cdrServer.table_name?.toLowerCase()
 
+    const server_count: Count = await this.cdrServerRepository.count({table_name: cdrServer.table_name})
+    if (server_count && server_count.count>1) {
+      throw new HttpErrors.BadRequest("There are more than 2 servers have same table name.")
+    }
+
     cdrServer.created_at = new Date().toISOString()
     cdrServer.created_by = profile.user.id
     cdrServer.updated_at = new Date().toISOString()
@@ -96,6 +101,10 @@ export class CdrServerController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.query.string('value') value: string,
   ): Promise<Count> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!profile.permissions.includes(PERMISSIONS.READ_CDR_SERVER_MANAGEMENT))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
     return this.cdrServerRepository.count(DataUtils.getWhere(value,
       ['name', 'address', 'username', 'lnp_server', 'port'],
       'port', undefined));
@@ -125,8 +134,18 @@ export class CdrServerController {
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include = []
-    include.push({relation: 'created'})
-    include.push({relation: 'updated'})
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
 
     return this.cdrServerRepository.find(DataUtils.getFilter(limit, skip, order, value,
       ['name', 'address', 'username', 'lnp_server', 'port'],
@@ -150,7 +169,7 @@ export class CdrServerController {
     if (!profile.permissions.includes(PERMISSIONS.READ_CDR_SERVER_MANAGEMENT))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    return this.cdrServerRepository.findById(id, {});
+    return this.cdrServerRepository.findById(id);
   }
 
   @patch('/cdr-servers/{id}')
@@ -164,13 +183,13 @@ export class CdrServerController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(CdrServer, {
-            title: 'UpdateCdrServer',
-            exclude: ['id', 'table_name', 'created_at', 'created_by', 'updated_at', 'updated_by'],
+            title: 'NewCdrServer',
+            exclude: ['id', 'created_at', 'created_by', 'updated_at', 'updated_by'],
           }),
         },
       },
     })
-      cdrServer: Omit<CdrServer, 'id,name,created_at,created_by,updated_at,updated_by'>,
+      cdrServer: Omit<CdrServer, 'id,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
     if (!profile.permissions.includes(PERMISSIONS.WRITE_CDR_SERVER_MANAGEMENT))

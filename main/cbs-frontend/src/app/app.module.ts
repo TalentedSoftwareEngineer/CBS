@@ -20,7 +20,7 @@ import {StatusInterceptor, TokenInterceptor} from "./services/middlewares";
 @NgModule({
   declarations: [
     AppComponent,
-    ClientComponent,
+    ClientComponent
   ],
   imports: [
     BrowserModule,

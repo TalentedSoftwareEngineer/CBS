@@ -10,6 +10,7 @@ import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { toBase64 } from 'src/app/helper/utils';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-cdrs',
@@ -20,7 +21,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
 
   @ViewChild('elmnt_sftp_path') elmnt_sftp_path!: ElementRef;
 
-  pageSize = 10
+  pageSize = 100
   pageIndex = 1
   import_cdrs: any[] = [];
   filterName = ''
@@ -30,7 +31,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
   resultsLength = -1
   filterResultLength = -1;
   isLoading = true
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
 
   write_permission: boolean = false;
   flag_openDialog: boolean = false;
@@ -116,17 +117,18 @@ export class CdrsComponent implements OnInit, AfterViewInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.READ_CDRS_IMPORT)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
-      
-    })
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.READ_CDRS_IMPORT)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
+
+    // this.store.state$.subscribe(async (state)=> {
+
+    // })
 
     this.getSftpHosts();
     this.getImportCDRsList();
@@ -139,7 +141,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
 
   getSftpHosts = async () => {
     await this.api.getSftpHosts().pipe(tap(res=>{
-      this.input_sftp_path = res.remotePath;
+      this.input_sftp_path = res.value;
     })).toPromise();
   }
 
@@ -166,9 +168,9 @@ export class CdrsComponent implements OnInit, AfterViewInit {
         .pipe(tap(async (response: any[]) => {
           this.import_cdrs = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.start_date = u.start_date ? moment(new Date(u.start_date)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.start_date = u.start_date ? moment(new Date(u.start_date)).format('MM/DD/YYYY h:mm:ss A') : '';
           });
 
           for (let item of response) {
@@ -220,6 +222,14 @@ export class CdrsComponent implements OnInit, AfterViewInit {
       return
     }
 
+    if(this.inputIsPassword && this.inputPassword=='') {
+      this.showWarn('Please input password!');
+      return
+    } else if(!this.inputIsPassword && this.inputPublicKey=='') {
+      this.showWarn('Please input private key!');
+      return
+    }
+
     let name = this.cdrsImportForm.get('name')?.value;
     let table_name = this.cdrsImportForm.get('table_name')?.value;
     let address = this.cdrsImportForm.get('address')?.value;
@@ -234,14 +244,13 @@ export class CdrsComponent implements OnInit, AfterViewInit {
     let lnp_server = this.cdrsImportForm.get('lnp_server')?.value;
     let path = this.cdrsImportForm.get('path')?.value;
 
-    let data = {
+    let data: any = {
       name: name ? name : '',
-      table_name: table_name ? table_name : '',
       address: address ? address : '',
       port: port ? port : '',
       username: username ? username : '',
-      password: this.inputPassword,
-      public_key: this.inputPublicKey,
+      password: this.inputPassword?this.inputPassword:'',
+      public_key: this.inputPublicKey?this.inputPublicKey:'',
       start_date: start_date,
       is_rate: Boolean(is_rate),
       is_lrn: Boolean(is_lrn),
@@ -249,6 +258,8 @@ export class CdrsComponent implements OnInit, AfterViewInit {
       lnp_server: lnp_server ? lnp_server : '',
       path: path ? path : '',
     }
+
+    data.table_name = table_name ? table_name : '';
 
     if(this.modalTitle.toLowerCase()=='add') {
       await this.api.createImportCDR(data).pipe(tap(res=>{
@@ -341,9 +352,9 @@ export class CdrsComponent implements OnInit, AfterViewInit {
         if(!res.failed) {
           this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
         } else if(!res.completed) {
-          this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          this.showError(`Failed: ${res.failed}  ${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\n${res.message}`);
         } else {
-          this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+          this.showWarn(`Completed: ${res.completed} \n\nFailed: ${res.failed}  ${res.message!='' ? 'Upload completed for the following reasons!' : ''}  \n\n${res.message}`);
         }
         this.flag_openUploadDialog = false;
       });

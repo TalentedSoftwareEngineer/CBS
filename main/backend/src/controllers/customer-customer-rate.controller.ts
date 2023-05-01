@@ -91,8 +91,18 @@ export class CustomerCustomerRateController {
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include = []
-    include.push({relation: 'created'})
-    include.push({relation: 'updated'})
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
 
     let custom: any[] = [ {customer_id: id} ]
 
@@ -329,9 +339,6 @@ export class CustomerCustomerRateController {
       + Math.random().toString(36).substring(2, 15)
       + Math.random().toString(36).substring(2, 15)
       + "." + upload.extension
-
-    let completed = 0, failed = 0
-    let message: string = ""
 
     try {
       fs.writeFileSync(filename, upload.encoded_file, 'base64')

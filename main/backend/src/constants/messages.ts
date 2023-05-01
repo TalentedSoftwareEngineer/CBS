@@ -8,4 +8,6 @@ export const MESSAGES = {
     MISSING_PARAMETERS: "Missing Parameters",
 
     EMPTY_RESPONSE: "Response is null. Please contact administrator.",
+
+    NO_CDR_LOG: "CDR Log has not imported yet. Please try again later!"
 }

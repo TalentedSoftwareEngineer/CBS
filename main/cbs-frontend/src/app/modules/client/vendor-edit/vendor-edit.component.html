@@ -122,7 +122,7 @@
                     <div class="col-12 md:col-6">
                         <span class="p-float-label">
                         <p-calendar
-                            dateFormat="mm/dd/yy"
+                            dateFormat="mm/dd/yyyy"
                             [showButtonBar]="true"
                             formControlName="start"
                         ></p-calendar>
@@ -172,7 +172,7 @@
                 </div>
             </form>
         </p-tabPanel>
-        <p-tabPanel header="Resource Group">
+        <p-tabPanel header="NAP">
             <div class="card pb-3">
                 <div class="grid">
                     <div class="col-12 xl:col-8">
@@ -200,7 +200,7 @@
 
                     <div class="col-12 xl:col-4 text-right">
                         <span class="p-buttonset">
-                            <button pButton pRipple label="Add Resource Group" (click)="openModal('Add')" icon="pi pi-plus" [disabled]="isLoading" class="p-button-success"></button>
+                            <button pButton pRipple label="Add NAP" (click)="openModal('Add')" icon="pi pi-plus" [disabled]="isLoading" class="p-button-success"></button>
                             <button pButton pRipple label="Upload" (click)="openUploadModal()" icon="pi pi-upload" [disabled]="isLoading" class="p-button-help"></button>
                         </span>
                     </div>
@@ -213,7 +213,7 @@
                   <ng-template pTemplate="header">
                     <tr>
                       <th class="text-align-center" [ngClass]="sortActive === 'rgid' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
-                        <a (click)="onSortChange('rgid')">RGID</a>
+                        <a (click)="onSortChange('rgid')">NAP ID</a>
                       </th>
                       <th class="text-align-center" [ngClass]="sortActive === 'partition_id' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
                         <a (click)="onSortChange('partition_id')">PartitionID</a>
@@ -236,7 +236,7 @@
                   <ng-template pTemplate="body" let-group>
                     <tr>
                         <td class="text-align-center">
-                            <span class="p-column-title">RGID</span>
+                            <span class="p-column-title">NAP ID</span>
                             {{ group.rgid }}
                         </td>
                         <td class="text-align-center">
@@ -560,13 +560,13 @@
     </p-tabView>
 </div>
 
-<p-dialog [header]="modalTitle + ' Resource Group'" styleClass="rg-modal" [(visible)]="flag_openDialog" (onHide)="closeModal()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '80vw'}" [modal]="true" [draggable]="false" [resizable]="false">
+<p-dialog [header]="modalTitle + ' NAP'" styleClass="rg-modal" [(visible)]="flag_openDialog" (onHide)="closeModal()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '80vw'}" [modal]="true" [draggable]="false" [resizable]="false">
     <form [formGroup]="resourceGroupForm" (ngSubmit)="onResourceGroupSubmit(modalTitle)">
         <div class="grid p-fluid">
             <div class="col-12 md:col-6">
                 <span class="p-float-label">
                     <input type="text" class="{{isResourceGroupFormFieldValid('rgid') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="rgid" formControlName="rgid" pInputText>
-                    <label for="rgid">RGID</label>
+                    <label for="rgid">NAP ID</label>
                 </span>
             </div>
             <div class="col-12 md:col-6">
@@ -627,7 +627,7 @@
         <p-table [value]="uploadGroups">
             <ng-template pTemplate="header">
                 <tr>
-                    <th class="text-center">RGID</th>
+                    <th class="text-center">NAP ID</th>
                     <th class="text-center">PartitionID</th>
                     <th class="text-center">IP</th>
                     <th class="text-center">Direction</th>

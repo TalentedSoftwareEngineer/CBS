@@ -45,16 +45,27 @@ export class CdrAutoImport extends CronJob {
           continue
         }
 
-        let is_running = await this.cdrService.isStillRunning(server.id!)
-        if (is_running) {
-          console.log(server.name + " is under processing....")
-          continue
-        }
+        listResult.result.sort((a: any, b: any) => a.name > b.name ? -1 : 1)
+
+        // let is_running = await this.cdrService.isStillRunning(server.id!)
+        // if (is_running) {
+        //   console.log(server.name + " is under processing....")
+        //   continue
+        // }
 
         let history: any = await this.cdrService.getLastHistory(server.id!)
 
         const list = listResult.result.filter((item: any) => {
           if (item.name.startsWith("cdr") && item.name.endsWith("log.gz")) {
+            if (server.start_date && server.start_date!="") {
+              let dt = item.name.replace("cdr_", "").replace(".log.gz", "").replace("_", "").replace(/-/g, "")
+              dt = dt.substring(0,4) +"-" + dt.substring(4,6)+ "-" + dt.substring(6,8) + " " + dt.substring(8,10) + ":" + dt.substring(10, 12) + ":" + dt.substring(12, 14)
+
+              if (Date.parse(dt)<Date.parse(server.start_date)) {
+                return false
+              }
+            }
+
             if (history == null)
               return true
 

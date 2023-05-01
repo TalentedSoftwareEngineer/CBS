@@ -26,9 +26,8 @@ export class CustomerResourceGroup extends Entity {
 
   @property({
     type: 'number',
-    required: true,
   })
-  partition_id: number;
+  partition_id?: number;
 
   @property({
     type: 'string',

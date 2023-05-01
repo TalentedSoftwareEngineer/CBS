@@ -10,6 +10,7 @@ import { ROUTES } from 'src/app/app.routes';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { toBase64 } from 'src/app/helper/utils';
+import { PAGE_SIZE_OPTIONS } from '../../constants';
 
 @Component({
   selector: 'app-customer-edit',
@@ -19,7 +20,7 @@ import { toBase64 } from 'src/app/helper/utils';
 export class CustomerEditComponent implements OnInit {
 
   //resource group table
-  pageSize = 15
+  pageSize = 100
   pageIndex = 1
   filterName = ''
   filterValue = ''
@@ -27,7 +28,7 @@ export class CustomerEditComponent implements OnInit {
   sortDirection = 'ASC'
   resultsLength = -1
   filterResultLength = -1;
-  rowsPerPageOptions: any[] = [10, 20, 30, 40, 50]
+  rowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS
   isLoading = true
 
   //rate table
@@ -43,7 +44,7 @@ export class CustomerEditComponent implements OnInit {
   rateIsLoading = false;
 
   //Npanxx Lerg Rate Table
-  npanxxPageSize = 10
+  npanxxPageSize = 100
   npanxxPageIndex = 1
   npanxxFilterName = ''
   npanxxFilterValue = ''
@@ -52,8 +53,23 @@ export class CustomerEditComponent implements OnInit {
   npanxxResultsLength = -1
   npanxxFilterResultLength = -1;
   npanxxIsLoading = true
-  npanxxRowsPerPageOptions: any[] = [10, 20, 30, 40, 50];
+  npanxxRowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
   npanxxRates: any[] = []
+
+  //TFN Numbers Table
+  tfnNumbersPageSize = 100
+  tfnNumbersPageIndex = 1
+  tfnNumbersFilterName = ''
+  tfnNumbersFilterValue = ''
+  tfnNumbersSortActive = 'updated_at';
+  tfnNumbersSortDirection = 'DESC'
+  tfnNumbersResultsLength = -1
+  tfnNumbersFilterResultLength = -1;
+  tfnNumbersIsLoading = true
+  tfnNumbersRowsPerPageOptions: any[] = PAGE_SIZE_OPTIONS;
+  tfnNumbers: any[] = []
+
+  filterCustomerOptions: any[] = [{name: 'All', value: ''}];
 
   tableFlatRate: string = ''
 
@@ -94,7 +110,7 @@ export class CustomerEditComponent implements OnInit {
   resourceGroupForm: FormGroup = new FormGroup({
     rgid: new FormControl('', Validators.required),
     description: new FormControl(''),
-    partition_id: new FormControl('', Validators.required),
+    partition_id: new FormControl(''),
     ip: new FormControl(),
     active: new FormControl(false, Validators.required),
     direction: new FormControl('INBOUND', Validators.required),
@@ -280,16 +296,18 @@ export class CustomerEditComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.WRITE_CUSTOMERS)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
-    })
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.WRITE_CUSTOMERS)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
+
+    // this.store.state$.subscribe(async (state)=> {
+
+    // })
 
     await new Promise<void>(resolve=> {
       this.activatedRoute.queryParams.subscribe((params) => {
@@ -304,6 +322,10 @@ export class CustomerEditComponent implements OnInit {
 
     this.getRatesList();
     this.getTotalRatesCount();
+
+    // await this.getCustomerList();
+    await this.getTfnNumbersList();
+    await this.getTotalTfnNumberCount();
   }
 
   createData = (name: string, value: number) => {
@@ -322,10 +344,10 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (groupsRes: any[]) => {
           this.groups = [];
           groupsRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
-            u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
+            // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
 
           for (let group of groupsRes) {
@@ -360,10 +382,10 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (ratesRes: any[]) => {
           this.rates = [];
           ratesRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
-            u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
+            // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
 
           for (let rate of ratesRes) {
@@ -389,7 +411,6 @@ export class CustomerEditComponent implements OnInit {
     })).toPromise();
   }
 
-
   getLergsRatesList = async () => {
     this.npanxxIsLoading = true;
     try {
@@ -399,8 +420,8 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (response: any[]) => {
           this.npanxxRates = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('YYYY/MM/DD h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('YYYY/MM/DD h:mm:ss A') : '';
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
           });
 
           for (let item of response) {
@@ -428,6 +449,53 @@ export class CustomerEditComponent implements OnInit {
     .pipe(tap( res => {
       this.npanxxResultsLength = res.count
     })).toPromise();
+  }
+
+  getTfnNumbersList = async () => {
+    this.tfnNumbersIsLoading = true;
+    try {
+      let filterValue = this.tfnNumbersFilterValue;
+
+      await this.api.getCustomerTfnNumbersList(this.tfnNumbersSortActive, this.tfnNumbersSortDirection, this.tfnNumbersPageIndex, this.tfnNumbersPageSize, filterValue, this.customer_id)
+        .pipe(tap(async (response: any[]) => {
+          this.tfnNumbers = [];
+          response.map(u => {
+            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.customer_id = u.customer_id ? this.filterCustomerOptions.find(item=>item.value == u.customer_id)?.name : '';
+          });
+
+          this.tfnNumbers = response;
+        })).toPromise();
+
+      this.tfnNumbersFilterResultLength = -1;
+      await this.api.getCustomerTfnNumberCount(filterValue, this.customer_id)
+      .pipe(tap( res => {
+        this.tfnNumbersFilterResultLength = res.count
+      })).toPromise();
+    } catch (e) {
+    } finally {
+      setTimeout(() => this.tfnNumbersIsLoading = false, 1000);
+    }
+  }
+
+  getTotalTfnNumberCount = async () => {
+    this.tfnNumbersResultsLength = -1
+    await this.api.getCustomerTfnNumberCount('', this.customer_id)
+    .pipe(tap( res => {
+      this.tfnNumbersResultsLength = res.count
+    })).toPromise();
+  }
+
+  getCustomerList = async () => {
+    try {
+      await this.api.getCustomerListForFilter()
+        .pipe(tap(async (res: any[]) => {
+          let customerOptions = [{name: 'All Customers', value: 0}, ...res.map(item=>({name: `${item.company_name} (${item.company_id})`, value: item.id}))];
+          this.filterCustomerOptions = [{name: 'All', value: ''}, ...customerOptions];
+        })).toPromise();
+    } catch (e) {
+    }
   }
 
   initCustomer = () => {
@@ -544,11 +612,6 @@ export class CustomerEditComponent implements OnInit {
       last_name: this.companyForm.get('last_name')?.value,
       email: this.companyForm.get('email')?.value,
       status: this.companyForm.get('status')?.value,
-      rate_type: "",
-      flat_rate: 0,
-      default_rate: 0,
-      init_duration: 0,
-      succ_duration: 0
     }
 
     await this.api.updateCompany(this.customer_id, data).pipe(tap(res=>{
@@ -608,12 +671,6 @@ export class CustomerEditComponent implements OnInit {
     });
 
     let data: any = {
-      company_id: customer_info.company_id,
-      company_name: customer_info.company_name,
-      first_name: customer_info.first_name,
-      last_name: customer_info.last_name,
-      email: customer_info.email,
-      status: customer_info.status,
       default_rate: Number(this.inputDefaultRate),
       rate_type: this.selectRateType,
       init_duration: Number(this.inputInidur),
@@ -624,7 +681,7 @@ export class CustomerEditComponent implements OnInit {
       data.flat_rate = Number(this.inputFlatRate);
     }
 
-    await this.api.updateCompany(this.customer_id, data).pipe(tap(res=>{
+    await this.api.updateRates(this.customer_id, data).pipe(tap(res=>{
       this.tableFlatRate = this.inputFlatRate;
       this.showSuccess('Successfully updated!', 'Success');
     })).toPromise();
@@ -657,7 +714,7 @@ export class CustomerEditComponent implements OnInit {
   }
 
   onBlurNewPassword = () => {
-    
+
   }
 
   onBlurConfirmPassword = () => {
@@ -680,7 +737,7 @@ export class CustomerEditComponent implements OnInit {
     } else {
       this.resourceGroupForm.controls['rgid'].disable();
     }
-    
+
     this.flag_openDialog = true
   }
 
@@ -752,7 +809,7 @@ export class CustomerEditComponent implements OnInit {
       });
     }
   }
-  
+
   setResourceGroupFormData = (id: string) => {
     return new Promise<void>(resolve=>{
       this.api.getResourceGroup(id).subscribe(res=> {
@@ -811,7 +868,7 @@ export class CustomerEditComponent implements OnInit {
           this.showWarn('Please select the csv that file size are less than 25MB');
           return;
         }
-  
+
         let body: any = {
           method: this.uploadMethod,
           encoded_file: encoded_file,
@@ -821,9 +878,9 @@ export class CustomerEditComponent implements OnInit {
           if(!res.failed) {
             this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
           } else if(!res.completed) {
-            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showError(`Failed: ${res.failed}  ${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\n${res.message}`);
           } else {
-            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showWarn(`Completed: ${res.completed} \n\nFailed: ${res.failed}  ${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\n${res.message}`);
           }
           this.getGroupsList();
           this.getTotalUsersCount();
@@ -845,7 +902,7 @@ export class CustomerEditComponent implements OnInit {
         let file_extension = items[items.length - 1]
         let encoded_file: any = await toBase64(file)
         encoded_file = encoded_file.split(',')[1];
-  
+
         if(encoded_file.length > 1024*1024*25) {
           this.showWarn('Please select the csv that file size are less than 25MB');
           return;
@@ -859,11 +916,11 @@ export class CustomerEditComponent implements OnInit {
           if(!res.failed) {
             this.showSuccess('Successfully Uploaded!', 'Total: '+ res.completed);
           } else if(!res.completed) {
-            this.showError(`${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showError(`Failed: ${res.failed}  ${res.message!='' ? 'Upload failed for the following reasons!' : ''} \n\n${res.message}`);
           } else {
-            this.showWarn(`${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\nCompleted: ${res.completed} \n\nFailed: ${res.failed} \n\n${res.message}`);
+            this.showWarn(`Completed: ${res.completed} \n\nFailed: ${res.failed}  ${res.message!='' ? 'Upload completed for the following reasons!' : ''} \n\n${res.message}`);
           }
-  
+
           this.getRatesList();
           this.getTotalRatesCount();
           this.flag_openRateUploadDialog = false;
@@ -877,7 +934,7 @@ export class CustomerEditComponent implements OnInit {
 
   openRateModal = (rateModalTitle: string) => {
     if(rateModalTitle.toLowerCase()=='add') {
-      this.setCustomerRateFormDefault();      
+      this.setCustomerRateFormDefault();
     }
 
     this.flag_openRateDialog = true;
@@ -886,7 +943,7 @@ export class CustomerEditComponent implements OnInit {
 
   closeRateModal = () => {
    this.flag_openRateDialog = false;
-   this.rateForm.reset(); 
+   this.rateForm.reset();
   }
 
   onRateSubmit = (rateModalTitle: string) => {
@@ -966,7 +1023,7 @@ export class CustomerEditComponent implements OnInit {
       callback(res.username);
     })
   }
-  
+
   onChangeRatesType = (event: any) => {
 
   }
@@ -1033,7 +1090,7 @@ export class CustomerEditComponent implements OnInit {
   ratePaginate = (event: any) => {
     this.onPagination(event.page+1, event.rows);
   }
-  
+
   //Npanxx Lerg Rate table pagination and sort
   onNpanxxSortChange = async (name: any) => {
     this.npanxxSortActive = name;
@@ -1060,6 +1117,34 @@ export class CustomerEditComponent implements OnInit {
 
   npanxxPaginate = (event: any) => {
     this.onNpanxxPagination(event.page+1, event.rows);
+  }
+
+  //TFN Numbers Table Handle
+  onTfnNumbersSortChange = async (name: any) => {
+    this.tfnNumbersSortActive = name;
+    this.tfnNumbersSortDirection = this.tfnNumbersSortDirection === 'ASC' ? 'DESC' : 'ASC';
+    this.tfnNumbersPageIndex = 1;
+    await this.getTfnNumbersList();
+  }
+
+  onTfnNumbersFilter = (event: Event) => {
+    this.tfnNumbersPageIndex = 1;
+    this.tfnNumbersFilterName = (event.target as HTMLInputElement).name;
+    this.tfnNumbersFilterValue = (event.target as HTMLInputElement).value;
+  }
+
+  onTfnNumbersClickFilter = () => this.getTfnNumbersList();
+
+  onTfnNumbersPagination = async (pageIndex: any, pageRows: number) => {
+    this.tfnNumbersPageSize = pageRows;
+    const totalPageCount = Math.ceil(this.tfnNumbersFilterResultLength / this.tfnNumbersPageSize);
+    if (pageIndex === 0 || pageIndex > totalPageCount) { return; }
+    this.tfnNumbersPageIndex = pageIndex;
+    await this.getTfnNumbersList();
+  }
+
+  tfnNumbersPaginate = (event: any) => {
+    this.onTfnNumbersPagination(event.page+1, event.rows);
   }
 
   showWarn = (msg: string) => {

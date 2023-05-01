@@ -43,6 +43,8 @@ import {BadgeModule} from 'primeng/badge';
 import {TooltipModule} from 'primeng/tooltip';
 import {CalendarModule} from 'primeng/calendar';
 import { TagModule } from 'primeng/tag';
+import {InputNumberModule} from 'primeng/inputnumber';
+import {InputMaskModule} from 'primeng/inputmask';
 
 // @ts-ignore
 import {CountToModule} from "angular-count-to";
@@ -72,6 +74,10 @@ import { VendorEditComponent } from './vendor-edit/vendor-edit.component';
 import { CdrsComponent } from './cdrs/cdrs.component';
 import { CdrImportHistoryComponent } from './cdr-import-history/cdr-import-history.component';
 import { CdrLogComponent } from './cdr-log/cdr-log.component';
+import { PhoneFormatPipe } from 'src/app/pipes/phone-format.pipe';
+import { DurationRangeComponent } from 'src/app/components/duration-range/duration-range.component';
+import { CallCountRangeComponent } from 'src/app/components/call-count-range/call-count-range.component';
+import { LrnComponent } from './lrn/lrn.component';
 
 @NgModule({
   imports: [
@@ -117,6 +123,8 @@ import { CdrLogComponent } from './cdr-log/cdr-log.component';
     TooltipModule,
     CalendarModule,
     TagModule,
+    InputNumberModule,
+    InputMaskModule,
     // ---------------------------------
 
     CountToModule,
@@ -150,6 +158,10 @@ import { CdrLogComponent } from './cdr-log/cdr-log.component';
     CdrsComponent,
     CdrImportHistoryComponent,
     CdrLogComponent,
+    PhoneFormatPipe,
+    DurationRangeComponent,
+    CallCountRangeComponent,
+    LrnComponent
   ],
   providers: [],
   exports: [

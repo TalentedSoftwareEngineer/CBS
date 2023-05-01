@@ -23,3 +23,5 @@ export * from './lerg-history.model';
 export * from './vendor-rate.model';
 export * from './cdr-server.model';
 export * from './cdr-history.model';
+export * from './tfn-number.model';
+export * from './lrn-number.model';

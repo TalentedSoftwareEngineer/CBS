@@ -148,7 +148,7 @@
                   id="start_date" 
                   formControlName="start_date"
                   [(ngModel)]="inputStartDate"
-                  dateFormat="mm/dd/yy"
+                  dateFormat="mm/dd/yyyy"
                   [showButtonBar]="true"
                 ></p-calendar>
                 <label for="start_date">Start Date</label>
@@ -169,7 +169,7 @@
               </span>
             </div>
             
-            <div class="md:col-6 col-12 flex align-items-center justify-content-between">
+            <div class="md:col-6 col-12 flex justify-content-between mt-3">
               <span>
                 <p-inputSwitch 
                   formControlName="is_lrn" 
@@ -202,7 +202,7 @@
                   formControlName="switchCredential"
                   (onChange)="inputPublicKey='';inputPassword=''"
                 ></p-inputSwitch>
-                <label class="ml-3">Password or Public Key</label>
+                <label class="ml-3">Password or Private Key</label>
               </span>
 
               <span *ngIf="inputIsPassword" class="p-float-label mt-3">
@@ -212,7 +212,7 @@
 
               <span *ngIf="!inputIsPassword" class="p-float-label mt-3">
                 <textarea class="{{isImportCDRsFormFieldValid('public_key') ? 'ng-invalid ng-dirty form-control' : 'form-control'}}" id="public_key" formControlName="public_key" [(ngModel)]="inputPublicKey" rows="5" cols="30" pInputTextarea></textarea>
-                <label for="public_key">Public Key</label>
+                <label for="public_key">Private Key</label>
               </span>
             </div>
           </div>

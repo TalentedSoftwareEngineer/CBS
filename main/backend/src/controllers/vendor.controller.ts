@@ -9,7 +9,7 @@ import {
   CredentialsRepository,
   CustomerRateRepository,
   CustomerRepository,
-  CustomerResourceGroupRepository,
+  CustomerResourceGroupRepository, VendorRateRepository,
 } from '../repositories';
 import {inject, service} from '@loopback/core';
 import {RoleService} from '../services';
@@ -38,8 +38,8 @@ export class VendorController {
     public credentialsRepository : CredentialsRepository,
     @repository(CustomerResourceGroupRepository)
     public customerResourceGroupRepository : CustomerResourceGroupRepository,
-    @repository(CustomerRateRepository)
-    public customerRateRepository : CustomerRateRepository,
+    @repository(VendorRateRepository)
+    public vendorRateRepository : VendorRateRepository,
     @service(RoleService)
     public roleService : RoleService,
   ) {}
@@ -145,7 +145,7 @@ export class VendorController {
 
     let fields = ['company_id','company_name','first_name','last_name', 'email'];
     let num_fields = undefined;
-    let custom = undefined;
+    let custom = [{type: USER_TYPE.VENDOR}]
     return this.customerRepository.count(DataUtils.getWhere(value, fields, num_fields, custom));
   }
 
@@ -174,10 +174,20 @@ export class VendorController {
 
     let fields = ['company_id','company_name','first_name','last_name', 'email'];
     let num_fields = undefined;
-    let custom = undefined;
+    let custom = [{type: USER_TYPE.VENDOR}]
     let include = []
-    include.push({relation: 'created'})
-    include.push({relation: 'updated'})
+    include.push({
+      relation: 'created',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
+    include.push({
+      relation: 'updated',
+      scope: {
+        fields: { username: true, email: true, first_name: true, last_name: true }
+      }
+    })
     include.push({relation: 'customerInfo'})
     include.push({relation: 'customerBilling'})
 
@@ -226,13 +236,13 @@ export class VendorController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
-            title: 'NewVendor',
-            exclude: ['id', 'type', 'allowed', 'settings', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            title: 'NewGeneralVendor',
+            exclude: ['id', 'type', 'allowed', 'settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-      customer: Omit<Customer, 'id,type,allowed,settings,created_at,created_by,updated_at,updated_by'>,
+      customer: Omit<Customer, 'id,type,allowed,settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
     if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
@@ -249,6 +259,38 @@ export class VendorController {
     cus = await this.customerRepository.findOne({where: {company_name: customer.company_name}})
     if (cus && cus.id!=id)
       throw new HttpErrors.BadRequest("Customer have already existed. Please use different Company Name.");
+
+    customer.updated_by = profile.user.id
+    customer.updated_at = new Date().toISOString()
+
+    await this.customerRepository.updateById(id, customer);
+  }
+
+  @patch('/vendors/{id}/rates')
+  @response(204, {
+    description: 'Vendor PATCH success',
+  })
+  async updateRates(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.number('id') id: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Customer, {
+            title: 'NewRatesVendor',
+            exclude: ['id', 'type', 'allowed', 'settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+          }),
+        },
+      },
+    })
+      customer: Omit<Customer, 'id,type,allowed,settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    if (customer.rate_type=="")
+      throw new HttpErrors.BadRequest(MESSAGES.MISSING_PARAMETERS)
 
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
@@ -279,10 +321,18 @@ export class VendorController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
+    const billing = await this.customerRepository.customerBilling(id).get()
+    if (billing) {
+
+    } else {
+      customer.created_by = profile.user.id
+      customer.created_at = new Date().toISOString()
+    }
+
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
 
-    await this.customerRepository.customerBilling(id).patch(customer);
+    billing ? await this.customerRepository.customerBilling(id).patch(customer) : await this.customerRepository.customerBilling(id).create(customer)
   }
 
   @patch('/vendors/{id}/password', {
@@ -392,10 +442,18 @@ export class VendorController {
     if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
+    const additional = await this.customerRepository.customerInfo(id).get()
+    if (additional) {
+
+    } else {
+      customer.created_by = profile.user.id
+      customer.created_at = new Date().toISOString()
+    }
+
     customer.updated_by = profile.user.id
     customer.updated_at = new Date().toISOString()
 
-    await this.customerRepository.customerInfo(id).patch(customer)
+    additional ? await this.customerRepository.customerInfo(id).patch(customer) : await this.customerRepository.customerInfo(id).create(customer)
   }
 
   @del('/vendors/{id}')
@@ -413,15 +471,16 @@ export class VendorController {
     // TODO - check all foreign keys
     const rg = await this.customerResourceGroupRepository.findOne({where: { customer_id: id }})
     if (rg)
-      throw new HttpErrors.BadRequest("There are some Resource Groups in this customer. Please try again after remove all RGs.")
+      throw new HttpErrors.BadRequest("There are some Resource Groups in this vendor. Please try again after remove all RGs.")
 
-    const rate = await this.customerRateRepository.findOne({where: {customer_id: id}})
+    const rate = await this.vendorRateRepository.findOne({where: {customer_id: id}})
     if (rate)
-      throw new HttpErrors.BadRequest("There are some INTER/INTRA Rates in this customer. Please try again after remove all Rates.")
+      throw new HttpErrors.BadRequest("There are some INTER/INTRA Rates in this vendor. Please try again after remove all Rates.")
 
     const tx = await this.customerRepository.beginTransaction()
 
     await this.customerRepository.customerInfo(id).delete()
+    await this.customerRepository.customerBilling(id).delete()
     await this.credentialsRepository.deleteAll({and: [ {user_id: id}, {type: USER_TYPE.VENDOR} ]})
     await this.customerRepository.deleteById(id);
 

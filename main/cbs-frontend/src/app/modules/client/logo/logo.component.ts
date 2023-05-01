@@ -38,16 +38,16 @@ export class LogoComponent implements OnInit {
       }, 100)
     })
 
-    this.store.state$.subscribe(async (state)=> {
-      if(state.user.permissions?.includes(PERMISSIONS.READ_LOGO_MANAGEMENT)) {
-      } else {
-        // no permission
-        this.showWarn("You have no permission for this page")
-        await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
-        this.router.navigateByUrl(ROUTES.dashboard.system_overview)
-        return
-      }
+    if(this.store.getUser().permissions?.includes(PERMISSIONS.READ_LOGO_MANAGEMENT)) {
+    } else {
+      // no permission
+      this.showWarn("You have no permission for this page")
+      await new Promise<void>(resolve => { setTimeout(() => { resolve() }, 100) })
+      this.router.navigateByUrl(ROUTES.dashboard.system_overview)
+      return
+    }
 
+    this.store.state$.subscribe(async (state)=> {
       if(state.user.permissions?.indexOf(PERMISSIONS.WRITE_LOGO_MANAGEMENT) == -1)
         this.write_permission = false;
       else

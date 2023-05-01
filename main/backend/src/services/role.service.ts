@@ -36,18 +36,23 @@ export class RoleService {
   }
 
   private async createRole(customer: Customer, type: string, privileges: number[]) {
-    let role = new Role()
-    role.name = customer.company_id.toUpperCase() + " " + type
-    role.description = type + " for " + customer.company_name
-    role.created_by = customer.created_by
-    role.updated_by = customer.created_by
-    role.created_at = new Date().toISOString()
-    role.updated_at = new Date().toISOString()
-    role = await this.roleRepository.create(role)
+    let role = await this.roleRepository.findOne({where: {name: customer.company_id.toUpperCase() + " " + type}})
+    if (role) {
 
-    await privileges.forEach((item) => {
-      this.roleRepository.rolePrivileges(role.id).create({privilege_id: item})
-    })
+    } else {
+      role = new Role()
+      role.name = customer.company_id.toUpperCase() + " " + type
+      role.description = type + " for " + customer.company_name
+      role.created_by = customer.created_by
+      role.updated_by = customer.created_by
+      role.created_at = new Date().toISOString()
+      role.updated_at = new Date().toISOString()
+      role = await this.roleRepository.create(role)
+
+      for (const item of privileges) {
+        await this.roleRepository.rolePrivileges(role.id).create({privilege_id: item})
+      }
+    }
   }
 
 }

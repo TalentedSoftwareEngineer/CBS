@@ -15,6 +15,7 @@ import { DidNumberManagementComponent } from './did-number-management/did-number
 import {LayoutComponent} from "./layout/layout.component";
 import { LergComponent } from './lerg/lerg.component';
 import { LogoComponent } from './logo/logo.component';
+import { LrnComponent } from './lrn/lrn.component';
 import { ManageCustomerComponent } from './manage-customer/manage-customer.component';
 import { ManageRolesComponent } from './manage-roles/manage-roles.component';
 import { ManageUserComponent } from './manage-user/manage-user.component';
@@ -150,6 +151,11 @@ const routes: Routes = [
         path: 'cdr_log',
         component: CdrLogComponent,
         data: {title: 'CDR Log', guiSection: 'CDR Log'},
+      },
+      {
+        path: 'lrn',
+        component: LrnComponent,
+        data: {title: 'LRN Management', guiSection: 'LRN Management'},
       },
     ]
   },

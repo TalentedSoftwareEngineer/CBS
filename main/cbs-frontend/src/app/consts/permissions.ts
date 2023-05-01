@@ -16,6 +16,9 @@ export const PERMISSIONS = {
 
   CDR_LOG: 10,
 
+  READ_LRN_MANAGEMENT: 11,
+  WRITE_LRN_MANAGEMENT: 12,
+
   // Client Manangement
   READ_CUSTOMERS: 101,
   WRITE_CUSTOMERS: 102,

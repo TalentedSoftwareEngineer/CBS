@@ -15,3 +15,5 @@ export * from './vendor-rate.repository';
 export * from './cdr-server.repository';
 export * from './cdr-history.repository';
 export * from './lerg-history.repository';
+export * from './tfn-number.repository';
+export * from './lrn-number.repository';

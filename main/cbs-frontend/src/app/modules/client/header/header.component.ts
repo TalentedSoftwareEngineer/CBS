@@ -208,8 +208,7 @@ export class HeaderComponent implements OnInit {
     //     this.messageService.add({ key: 'tst', severity: 'error', summary: 'Error', detail: err.error?.message });
     //   });
 
-
-    this.store.removeToken();
+    // this.store.removeToken();
     this.store.removeUser();
 
     this.route.navigateByUrl(ROUTES.login);

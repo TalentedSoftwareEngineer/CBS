@@ -3,7 +3,13 @@
 // import {inject} from '@loopback/core';
 
 
-import {CdrServerRepository, ConfigurationRepository, LergHistoryRepository, LergRepository} from '../repositories';
+import {
+  CdrHistoryRepository,
+  CdrServerRepository,
+  ConfigurationRepository,
+  LergHistoryRepository,
+  LergRepository, LrnNumberRepository,
+} from '../repositories';
 import {
   post,
   param,
@@ -21,14 +27,16 @@ import {service} from '@loopback/core';
 import {CdrService, FtpService, RoleService} from '../services';
 import DataUtils from '../utils/data';
 import * as fs from "fs";
+import {Lerg, LergHistory, LrnNumber} from '../models';
+import shellExec from 'shell-exec';
+import {LRN_DOWNLOADED_PATH, LRN_SHELL_NAME, LRN_SHELL_PATH, SCP_PASS, SCP_PATH, SCP_SERVER, SCP_USER} from '../config';
+import directoryTree from 'directory-tree';
 
 export class HomeController {
   constructor(
     @repository(ConfigurationRepository) public configurationRepository : ConfigurationRepository,
     @repository(LergRepository) public lergRepository : LergRepository,
-    @repository(LergHistoryRepository) public historyRepository : LergHistoryRepository,
-    @service(CdrService) public cdrService : CdrService,
-    @service(FtpService) public ftpService : FtpService,
+    @repository(LrnNumberRepository) public lrnNumberRepository : LrnNumberRepository,
   ) {}
 
   @get('/configurations/initSettings', {
@@ -52,79 +60,8 @@ export class HomeController {
     return { banner: banner.value, logo: logo.value };
   }
 
-  @get('/configurations/test', {
-    description: 'Get Banner',
-    responses: {
-      '200': {
-        content: {
-          'application/json': {
-            schema: {
-              type: "object",
-            },
-          },
-        }
-      }
-    }
-  })
-  async test(
-  ): Promise<any> {
-    console.log("Start CDR Importing-----", new Date().toISOString())
-
-    const servers = await this.cdrService.getActiveServers()
-    if (!servers) {
-      console.log("No Active CDR Servers")
-      return
-    }
-
-    for (let server of servers) {
-      if (Date.parse(server.start_date) < new Date().getTime()) {
-        // started already
-        console.log(server.name + " is starting...")
-
-        await this.cdrService.create(server)
-
-        const listResult = await this.ftpService.list(server)
-        if (listResult.success==false) {
-          console.log(server.name + " > " + listResult.message)
-          continue
-        }
-
-        let is_running = await this.cdrService.isStillRunning(server.id!)
-        if (is_running) {
-          console.log(server.name + " is under processing....")
-          continue
-        }
-
-        let history: any = await this.cdrService.getLastHistory(server.id!)
-
-        const list = listResult.result.filter((item: any) => {
-          if (item.name.startsWith("cdr") && item.name.endsWith("log.gz")) {
-            if (history == null)
-              return true
-
-            if (item.name == history.filename)
-              return history.status == JOB_STATUS.FAILED
-
-            if (item.name > history.filename)
-              return true
-          }
-
-          return false
-        })
-
-        if (list.length==0) {
-          console.log("No List to import")
-          continue
-        }
-
-        this.cdrService.import(server, list)
-        return
-      }
-    }
-  }
-
-  @post('/test/import', {
-    description: 'Import Number',
+  @post('/test', {
+    description: 'test',
     responses: {
       '200': {
         description: 'NSRRequest ID',
@@ -143,70 +80,85 @@ export class HomeController {
       }
     }
   })
-    async import() {
-      const buffer = fs.readFileSync('c:/tmp/PROSBC2TPA2/cdr_2022-12-13_06-30-00.log')
-      let content = buffer.toString()
-      let items: any = content.split('\n');
-      items = items.map((item: string)=>{
-        let row: any = {};
-        row['StatusType'] = item.split(',')[1];
+  async test(
+    @param.query.number('days') days: number,
+  ) {
+    this.process(days)
+  }
 
-        let properties: any[] = item.split(',').filter(dd=>dd.includes('='));
-        properties.forEach(aa=>{
-          row[aa.split('=')[0].replaceAll(":","_")] = aa.split('=')[1].replaceAll("'", "").replaceAll("\r", "").trim();
-        });
+  public async process(days: number) {
+    console.log("Start LRN Updating-----", new Date().toISOString())
 
-        if (row["StatusType"]?.toString() == "BEG")
-        {
-            row["TerminationSource_BEG"] = row['TerminationSource'];
-            if (row["Direction"]?.toString() == "originate")
-            {
-                row["Datetime1"] = item.split(',')[0].split('.')[0];
-            }
-            else if (row["Direction"]?.toString() == "answer")
-            {
-                row["Datetime2"] = item.split(',')[0].split('.')[0];
-            }
-        }
-        else if (row["StatusType"]?.toString() == "END")
-        {
-            row["TerminationSource_END"] = row['TerminationSource'];
-            if (row["Direction"]?.toString() == "originate")
-            {
-                row["Datetime3"] = item.split(',')[0].split('.')[0];
-            }
-            else if (row["Direction"]?.toString() == "answer")
-            {
-                row["Datetime4"] = item.split(',')[0].split('.')[0];
-            }
-        }
-        return row;
-      });
-
-
-      const servers = await this.cdrService.getActiveServers()
-      if (!servers) {
-        console.log("No Active CDR Servers")
-        return
-      }
-
-      for (let server of servers) {
-        await this.cdrService.create(server)
-
-        await DataUtils.sleep(1000)
-
-        for (let item of items) {
-          await this.cdrService.alter(server, item)
-        }
-
-        await DataUtils.sleep(1000)
-
-        for (let item of items) {
-          await this.cdrService.insert(server, item)
-        }
-
-        return
-      }
-
+    const result = await shellExec("cd " + LRN_SHELL_PATH + " && ./" + LRN_SHELL_NAME + " " + days)
+    if (result.stderr!="") {
+      // failed to download
+      console.log("No New LRN File", result)
+      return
     }
+
+    let stdout = result.stdout // "lrn23-04-2023.tar.gz\n\nlrn23-04-2023.txt\n" //
+    let files: string[] = stdout.split("\n")
+    let gz = "", txt = ""
+    for (let file of files) {
+      if (file.endsWith(".tar.gz"))
+        gz = file
+      else if (file.endsWith(".txt"))
+        txt = file
+    }
+
+    txt = LRN_DOWNLOADED_PATH + "/" + txt
+    console.log("LRN File: ", txt)
+
+    try {
+      const fs = require('fs');
+      const es = require('event-stream')
+      const stream = fs.createReadStream(txt)
+        .pipe(es.split())
+        .pipe(es.mapSync(async (line: string) => {
+          stream.pause()
+
+          // console.log("line: " + line)
+          const lines = line.split(",")
+          const calling = lines.length>0 ? lines[0] : ''
+          const translated = lines.length>1 ? lines[1] : ''
+          const lata = lines.length>2 ? lines[2] : ''
+          const thousand = lines.length>3 ? lines[3] : ''
+
+          if (calling!="" && translated!="") {
+            this.update({calling, translated, lata, thousand})
+          }
+
+          stream.resume()
+        }))
+        .on('end', async() => {
+          await shellExec("rm -rf " + txt)
+          console.log("LRN Update Finished")
+        })
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async update(data: any) {
+    const {calling, translated, lata, thousand} = data
+    // let lrn = await this.lrnNumberRepository.findOne({where: {calling: calling}})
+    // if (lrn) {
+    //   lrn.calling = calling
+    //   lrn.translated = translated
+    //   lrn.lata = lata
+    //   lrn.thousand = thousand
+    //   await this.lrnNumberRepository.save(lrn)
+    // } else {
+    const lrn = new LrnNumber()
+    lrn.calling = calling
+    lrn.translated = translated
+    lrn.lata = lata
+    lrn.thousand = thousand
+
+    try {
+      await this.lrnNumberRepository.create(lrn)
+    } catch (err) {}
+    // }
+  }
+
 }

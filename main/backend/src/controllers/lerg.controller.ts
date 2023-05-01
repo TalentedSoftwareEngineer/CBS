@@ -20,7 +20,7 @@ import {
 import {BulkUpload, Customer, CustomerRate, Lerg} from '../models';
 import {LergRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {inject, service} from '@loopback/core';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {PERMISSIONS} from '../constants/permissions';
 import {MESSAGES} from '../constants/messages';
@@ -28,12 +28,13 @@ import DataUtils from '../utils/data';
 import {RATE_TYPE, UPLOAD_METHOD} from '../constants/configurations';
 import {TEMPORARY} from '../config';
 import * as fs from "fs";
+import {UploadService} from '../services';
 
 @authenticate('jwt')
 export class LergController {
   constructor(
-    @repository(LergRepository)
-    public lergRepository : LergRepository,
+    @repository(LergRepository) public lergRepository : LergRepository,
+    @service(UploadService) protected uploadService: UploadService,
   ) {}
 
   @post('/lergs')
@@ -235,131 +236,13 @@ export class LergController {
       + Math.random().toString(36).substring(2, 15)
       + "." + upload.extension
 
-    let completed = 0, failed = 0
-    let message: string = ""
-
     try {
       fs.writeFileSync(filename, upload.encoded_file, 'base64')
     } catch (err) {
       throw new HttpErrors.BadRequest("Failed to write temporary file.")
     }
 
-    const Excel = require('exceljs');
-    const workbook = new Excel.Workbook();
-    const worksheet = await DataUtils.getWorksheet(workbook, filename, upload.extension)
-      .catch(err => {
-        throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-      })
-
-    if (worksheet==null)
-      throw new HttpErrors.BadRequest("Failed to read uploaded file.")
-
-    // @ts-ignore
-    for (let index=1; index<=worksheet.rowCount; index++)  {
-      if (index==1)
-        continue
-
-      // @ts-ignore
-      let npanxx = worksheet.getCell('A'+index).value
-      // @ts-ignore
-      let lata = worksheet.getCell('B'+index).value
-      // @ts-ignore
-      let ocn = worksheet.getCell('C'+index).value
-      // @ts-ignore
-      let ocn_name = worksheet.getCell('D'+index).value
-      // @ts-ignore
-      let abbre = worksheet.getCell('E'+index).value
-      // @ts-ignore
-      let state = worksheet.getCell('F'+index).value
-      // @ts-ignore
-      let category = worksheet.getCell('G'+index).value
-      // @ts-ignore
-      let rate = worksheet.getCell('H'+index).value
-      // @ts-ignore
-      let note = worksheet.getCell('I'+index).value
-
-      if (npanxx==null || npanxx=="" || lata==null || lata=="" || ocn==null || ocn=="") {
-        const err = "NpaNxx, LATA, OCN is a mandatory field."
-        if (!message.includes(err))
-          message += err + "\n"
-        failed++
-        continue
-      }
-
-      // initialize with default rates
-      if (rate==null || rate=="")
-        rate = 0.0
-      else
-        rate = Number(rate)
-
-      let lerg = await this.lergRepository.findOne({where: {and: [{npanxx: npanxx}, {thousand: ''}]}})
-      if (lerg) {
-        if (upload.method==UPLOAD_METHOD.APPEND) {
-          const err = "NpaNxx have already existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        }
-        else if (upload.method==UPLOAD_METHOD.UPDATE) {
-          lerg.lata = lata
-          lata.thousand = ""
-
-          lerg.ocn = ocn
-          if (ocn_name!=null && ocn_name!="")
-            lerg.ocn_name = ocn_name
-
-          if (state!=null && state!="")
-            lerg.state = state
-          if (abbre!=null && abbre!="")
-            lerg.abbre = abbre
-          if (category!=null && category!="")
-            lerg.category = category
-
-          if (rate>=0)
-            lerg.rate = rate
-
-          if (note!=null && note!="")
-            lerg.note = note
-
-          lerg.updated_at = new Date().toISOString()
-
-          await this.lergRepository.save(lerg)
-          completed++
-        }
-        else if (upload.method==UPLOAD_METHOD.DELETE) {
-          await this.lergRepository.deleteById(lerg.id)
-          completed++
-        }
-      }
-      else {
-        if (upload.method==UPLOAD_METHOD.DELETE) {
-          const err = "NpaNxx have not existed."
-          if (!message.includes(err))
-            message += err + "\n"
-          failed++
-        } else {
-          lerg = new Lerg()
-          lerg.npanxx = npanxx
-          lerg.thousand = ""
-          lerg.lata = lata
-          lerg.ocn = ocn
-          lerg.ocn_name = ocn_name
-          lerg.state = state
-          lerg.abbre = abbre
-          lerg.category = category
-          lerg.rate = rate
-          lerg.note = note
-
-          lerg.created_at = new Date().toISOString()
-          lerg.updated_at = new Date().toISOString()
-
-          await this.lergRepository.create(lerg)
-          completed++
-        }
-      }
-    }
-
-    return { completed, failed, message }
+    return this.uploadService.readLerg(profile, upload, filename)
   }
 
 

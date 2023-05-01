@@ -1,0 +1,8 @@
+:host ::ng-deep .c-input-number.p-inputnumber {
+    width: 6rem !important;
+    .p-inputnumber-input {
+        width: 6rem !important;
+        height: 10rem;
+        display: none;
+    }
+}

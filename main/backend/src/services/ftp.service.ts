@@ -44,7 +44,7 @@ export class FtpService {
     })
   }
 
-  async download(server: CdrServer, file: string, localPath: string): Promise<any> {
+  async download(server: CdrServer, file: string, localPath: string, prefix?: string): Promise<any> {
     return new Promise(async (resolve) => {
       const Client = require('ssh2-sftp-client')
       let client = new Client()
@@ -53,7 +53,11 @@ export class FtpService {
 
       client.connect(config)
         .then(() => {
-          return client.get(server.path + "/" + file, localPath + "/" + server.table_name + "/" + file)
+          let remoteFile = localPath + "/" + server.table_name + "/"
+          if (prefix)
+            remoteFile += prefix
+          remoteFile += file
+          return client.get(server.path + "/" + file, remoteFile)
         })
         .finally(() => {
           client.end()
