@@ -6,6 +6,9 @@ import {CONFIGURATIONS, JOB_STATUS} from '../constants/configurations';
 import {FtpService} from './ftp.service';
 import DataUtils from '../utils/data';
 import shellExec from 'shell-exec';
+import {LRN_API_URL, TEMPORARY} from "../config";
+import moment from "moment";
+import axios from "axios";
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class CdrService {
@@ -21,12 +24,12 @@ export class CdrService {
     // return await this.cdrServerRepository.find({where: {id: 2}})
   }
 
-  async getOppositeServer(server: CdrServer) {
+/*  async getOppositeServer(server: CdrServer) {
     return this.cdrServerRepository.find({where: {and: [
           {is_active: true}, {table_name: server.table_name},
           {id: {neq: server.id}}
     ]}})
-  }
+  }*/
 
   async isStillRunning(id: number) {
     const history = await this.cdrHistoryRepository.findOne({where: {and: [{server_id: id}, {or: [{status: JOB_STATUS.IMPORTING}, {status: JOB_STATUS.DOWNLOADING}, {status: JOB_STATUS.IN_PROGRESS}]}]}, order: ["filename desc"]})
@@ -40,6 +43,11 @@ export class CdrService {
     if (history)
       return history
     return null
+  }
+
+  async getHistory(id: number, filename: string) {
+    const history = await this.cdrHistoryRepository.findOne({where: {and: [{server_id: id}, {filename: filename}, {status: JOB_STATUS.SUCCESS}]} })
+    return history
   }
 
   async saveServerHistory(server_id: number, filename?: string, status?: string, message?: string, id?: string) {
@@ -66,6 +74,7 @@ export class CdrService {
     return isNew ? this.cdrHistoryRepository.create(history) : this.cdrHistoryRepository.save(history)
   }
 
+/*
   async create(server: CdrServer) {
     // create cdr log table
     try {
@@ -112,11 +121,12 @@ export class CdrService {
       // console.log(err)
     }
   }
+*/
 
   async alter(server: CdrServer, item: any) {
     Object.keys(item).forEach(async (name: string) => {
       try {
-        await this.cdrHistoryRepository.execute("alter table `" + server.table_name + "` add  `" + name + "` varchar(255) NULL")
+        await this.cdrHistoryRepository.execute("alter table `" + "cdr_log" + "` add  `" + name + "` varchar(255) NULL") // server.table_name
       } catch (err) {
         // console.log(err)
       }
@@ -127,8 +137,21 @@ export class CdrService {
     const { v4: uuidv4 } = require('uuid');
     const id = uuidv4();
 
+    if (item.Calling!=null) {
+      let did = item.Calling
+      const num = item.Calling.replace(/-/g, '')
+      if (num.length>0 && num.substring(0,1)=="+") {
+        if (num.length==12 && num.substring(1,2)=="1")
+          did = num.substring(2)
+      } else if (num.length==10) {
+      } else if (num.length==11 && num.substring(0,1)=="1")
+        did = num.substring(1)
+
+      item.LRN = await this.getLRN(did)
+    }
+
     try {
-      let fields = "`id`,`created_at`", values="'"+id+"'" + ",'" + new Date().toISOString() + "'"
+      let fields = "`id`,`ServerId`,`created_at`", values="'"+id+"'," + server.id + ",'" + new Date().toISOString() + "'"
       Object.keys(item).forEach((name: string) => {
         if (item[name]!=null) {
           // if (fields!="")
@@ -141,29 +164,29 @@ export class CdrService {
         }
       })
 
-      let sql = "insert into `" + server.table_name + "` (" + fields + ") values (" + values + ")"
+      let sql = "insert into `" + "cdr_log" + "` (" + fields + ") values (" + values + ")" // server.table_name
       await this.cdrHistoryRepository.execute(sql)
     } catch (err) {
-      await this.update(server, item)
       // console.log(err)
+      await this.update(server, item)
     }
 
     if (item.NAP_Originate!=null && item.NAP_Originate!="")
-      await this.addNAP(server.table_name!, item.NAP_Originate)
+      await this.addNAP("Originate", item.NAP_Originate)
 
     if (item.NAP_Answer!=null && item.NAP_Answer!="")
-      await this.addNAP(server.table_name!, item.NAP_Answer)
+      await this.addNAP("Answer", item.NAP_Answer)
   }
 
-  async addNAP(table: string, item: string) {
+  async addNAP(direction: string, item: string) {
     try {
-      let sql = "insert into `"  + table + "_nap`(`name`) values ('" + item + "')"
+      let sql = "insert into `"  + "cdr" + "_nap`(`name`,`direction`) values ('" + item + "','" + direction + "')"
       await this.cdrHistoryRepository.execute(sql)
     } catch (err) {}
   }
 
   async update(server: CdrServer, item: any) {
-    let sql = "update `" + server.table_name + "` "
+    let sql = "update `" + "cdr_log" + "` "   // server.table_name
     let values = ""
 
     try {
@@ -182,13 +205,14 @@ export class CdrService {
         }
       })
 
-      sql += + " set " + values + " where `SessionId`='" + item.SessionId+"' "
+      sql += + " set " + values + " where `ServerId`=" + server.id + " and `SessionId`='" + item.SessionId+"' "
 
       await this.cdrHistoryRepository.execute(sql)
     } catch (err) {
     }
   }
 
+/*
   async compare(server: CdrServer, file: any, history_id: string, opposite: any) {
     const CDR_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.CDR_HOME);
     const history = await this.saveServerHistory(server.id!, file.name, JOB_STATUS.DOWNLOADING, history_id)
@@ -294,10 +318,33 @@ export class CdrService {
     await this.saveServerHistory(server.id!, "compare_" + file.name, JOB_STATUS.SUCCESS, "Successfully imported", history.id)
     await DataUtils.sleep(100)
   }
+*/
+
+  async getLRN(did: string) {
+    try {
+      const response: any = await axios(LRN_API_URL, {
+        method: 'post',
+        data: {
+          did: did
+        },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (response.data.lrn!=null)
+        return response.data.lrn
+    } catch (err) {
+      console.log(err)
+    }
+
+    return "";
+  }
 
   async import(server: CdrServer, files: any[]) {
     const CDR_HOME = await this.configurationRepository.getConfig(CONFIGURATIONS.CDR_HOME);
-    const oppsite: any = await this.getOppositeServer(server)
+    // const oppsite: any = await this.getOppositeServer(server)
 
     for (let file of files) {
       const history = await this.saveServerHistory(server.id!, file.name, JOB_STATUS.DOWNLOADING)
@@ -310,16 +357,16 @@ export class CdrService {
       }
 
       const fs = require('fs')
-      if (oppsite && fs.existsSync(CDR_HOME + "/" + server.table_name + "/" + oppsite.id + "_" + file.name)) {
-        console.log(server.name + " > " + file.name + " is already downloaded.")
-        await this.compare(server, file, history.id!, oppsite)
-        // await this.saveServerHistory(server.id!, file.name, JOB_STATUS.FAILED, file.name + " is already downloaded.", history.id)
-        continue
-      }
+      // if (oppsite && fs.existsSync(CDR_HOME + "/" + oppsite.id + "_" + file.name)) { // + server.table_name + "/"
+      //   console.log(server.name + " > " + file.name + " is already downloaded.")
+      //   await this.compare(server, file, history.id!, oppsite)
+      //   // await this.saveServerHistory(server.id!, file.name, JOB_STATUS.FAILED, file.name + " is already downloaded.", history.id)
+      //   continue
+      // }
 
       await DataUtils.sleep(100)
 
-      await this.unzip(CDR_HOME + "/" + server.table_name + "/" + server.id + "_" + file.name)
+      await this.unzip(CDR_HOME + "/" + server.id + "_" + file.name) // server.table_name + "/" +
       const log_file = file.name.replace(".gz", "")
 
       console.log(server.name + " > " + log_file + " is generated....")
@@ -329,10 +376,10 @@ export class CdrService {
       // TODO - importing
       let content = ""
       try {
-        const buffer = fs.readFileSync(CDR_HOME + "/" + server.table_name + "/" + server.id + "_" + log_file)
+        const buffer = fs.readFileSync(CDR_HOME + "/" + server.id + "_" + log_file) //  server.table_name + "/" +
         content = buffer.toString()
       } catch (err) {
-        console.log(server.name + " > " + log_file + " has error to read....")
+        console.log(server.name + " > " + log_file + " has error to read...." + err.message)
         await this.saveServerHistory(server.id!, file.name, JOB_STATUS.FAILED, log_file + " has error to read....", history.id)
         return
       }
@@ -355,7 +402,7 @@ export class CdrService {
 
       // TODO - remove log file
       await DataUtils.sleep(100)
-      await this.delete(CDR_HOME + "/" + server.table_name + "/" + server.id + "_" + log_file)
+      await this.delete(CDR_HOME + "/" + server.id + "_" + log_file) // server.table_name + "/" +
 
       await this.saveServerHistory(server.id!, undefined, JOB_STATUS.SUCCESS, "Successfully imported", history.id)
       await DataUtils.sleep(100)
@@ -497,7 +544,7 @@ export class CdrService {
   }
 
   private async getWhere(payload: any, alias: string) {
-    const { table, value, start_at, end_at, duration_op, duration, calls_op, calls, nap } = payload
+    const { server, value, start_at, end_at, duration_op, duration, calls_op, calls, nap } = payload
 
     let Calling = "`Calling`"
     let Called = "`Called`"
@@ -507,6 +554,9 @@ export class CdrService {
     let Duration = "`Duration`"
 
     let where = " ( " + alias + StartTime + " between " + start_at + " and " + end_at + " ) "
+
+    if (server!="")
+      where += " and " + alias + "`ServerId`=" + server + " "
 
     let v_where = ""
     if (value!="") {
@@ -562,29 +612,15 @@ export class CdrService {
   }
 
   async counts(payload: any): Promise<any> {
-    const { table } = payload
-
-    let sql: string = " select count(*) as total_count from `" + table + "` "
-    let where = await this.getWhere(payload, "")
-    // let {where2} = await this.getWhere(payload, "a.")
-
-    if (where!="")
-      sql += " where " + where
-
-    return this.cdrHistoryRepository.execute(sql)
-  }
-
-  async finds(payload: any): Promise<any> {
     let Calling = "`Calling`"
     let Called = "`Called`"
-
-    const { table, order, skip, limit, calls_op, calls } = payload
+    const { server, calls_op, calls } = payload
 
     let sql: string = " select `b`.* "
     let where = await this.getWhere(payload, "`b`.")
     let where2 = await this.getWhere(payload, "`a`.")
 
-    sql += ", ( select count(*) from `" + table + "` as `a` "
+    sql += ", ( select count(*) from `" + "cdr_log" + "` as `a` "
     if (where2!="")
       sql += " where " + where2 + " and "
     else
@@ -592,7 +628,46 @@ export class CdrService {
 
     sql += " `a`." + Calling + "=" + "`b`." + Calling + " and `a`." + Called + "=" + "`b`." + Called
     sql += " ) as `calls` "
-    sql += " from `" + table + "` as `b`"
+    sql += " from `" + "cdr_log" + "` as `b`"
+
+    if (where!="")
+      sql += " where " + where
+
+    if (calls_op!="") {
+      if (calls_op=='between')
+        sql += " having " + "calls" + " " + calls_op + " " + calls + " "
+      else
+        sql += " having " + "calls" + calls_op + calls + " "
+    }
+
+    sql = " select count(*) as total_count from (" + sql + ") as `c` "
+    const res = await this.cdrHistoryRepository.execute(sql)
+    if (res!=null && res.length>0) {
+      return res[0]
+    }
+
+    return { total_count: 0 }
+  }
+
+  async finds(payload: any): Promise<any> {
+    let Calling = "`Calling`"
+    let Called = "`Called`"
+
+    const { server, order, skip, limit, calls_op, calls } = payload
+
+    let sql: string = " select `b`.* "
+    let where = await this.getWhere(payload, "`b`.")
+    let where2 = await this.getWhere(payload, "`a`.")
+
+    sql += ", ( select count(*) from `" + "cdr_log" + "` as `a` "
+    if (where2!="")
+      sql += " where " + where2 + " and "
+    else
+      sql += " where "
+
+    sql += " `a`." + Calling + "=" + "`b`." + Calling + " and `a`." + Called + "=" + "`b`." + Called
+    sql += " ) as `calls` "
+    sql += " from `" + "cdr_log" + "` as `b`"
 
     if (where!="")
       sql += " where " + where
@@ -613,8 +688,72 @@ export class CdrService {
     return this.cdrHistoryRepository.execute(sql)
   }
 
-  async getNAPs(table: string) {
-    let sql = " select `name` from `" + table + "_nap` order by `name`"
+  async export(payload: any): Promise<any> {
+    let Calling = "`Calling`"
+    let Called = "`Called`"
+
+    const { server, order, calls_op, calls } = payload
+
+    let sql: string = " select `b`.* "
+    let where = await this.getWhere(payload, "`b`.")
+    let where2 = await this.getWhere(payload, "`a`.")
+
+    sql += ", ( select count(*) from `" + "cdr_log" + "` as `a` "
+    if (where2!="")
+      sql += " where " + where2 + " and "
+    else
+      sql += " where "
+
+    sql += " `a`." + Calling + "=" + "`b`." + Calling + " and `a`." + Called + "=" + "`b`." + Called
+    sql += " ) as `calls` "
+    sql += " from `" + "cdr_log" + "` as `b`"
+
+    if (where!="")
+      sql += " where " + where
+
+    if (calls_op!="") {
+      if (calls_op=='between')
+        sql += " having " + "calls" + " " + calls_op + " " + calls + " "
+      else
+        sql += " having " + "calls" + calls_op + calls + " "
+    }
+
+    if (order!="") {
+      sql += " order by " + "`b`." + order
+    }
+
+    return this.cdrHistoryRepository.execute(sql)
+    // // logs = logs.map((u: any) => {
+    // //   u.StartTime = u.StartTime ? moment(new Date(Number(u.StartTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+    // //   return u
+    // // })
+    // const path = TEMPORARY + 'CDRLog_' + Math.random().toString(36).substring(2, 15) + ".csv"
+    //
+    // const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+    // const csvWriter = createCsvWriter({
+    //   path: path,
+    //   header: [
+    //     {id: 'StartTime', title: 'Start Time'},
+    //     {id: 'EndTime', title: 'End Time'},
+    //     {id: 'Calling', title: 'Calling'},
+    //     {id: 'Called', title: 'Called'},
+    //     {id: 'calls', title: 'Calls'},
+    //     {id: 'Duration', title: 'Duration'},
+    //     {id: 'NAP_Originate', title: 'NAP Originate'},
+    //     {id: 'NAP_Answer', title: 'NAP Answer'},
+    //   ]
+    // });
+    //
+    // await csvWriter.writeRecords(logs)
+    // return path
+  }
+
+  async execute(query: string) {
+    return this.cdrHistoryRepository.execute(query)
+  }
+
+  async getNAPs() {
+    let sql = " select `name` from `" + "cdr" + "_nap` group by `name` order by `name`"
     return this.cdrHistoryRepository.execute(sql)
   }
 

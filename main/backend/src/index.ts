@@ -37,13 +37,13 @@ if (require.main === module) {
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
-      maxAge: 86400,
+      maxAge: 86400000,
       credentials: true,
       requestBodyParser: {json: {limit: '25mb'}, text: {limit: '25mb'}}
     },
   };
 
-  if (process.env.NODE_ENV=='production') {
+  if (process.env.NODE_ENV=='production' || process.env.NODE_ENV=='development') {
     const fs = require("fs");
     config.rest.protocol = 'https';
     config.rest.key = fs.readFileSync(PRIVATE_KEY).toString();

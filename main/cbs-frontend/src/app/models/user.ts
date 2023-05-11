@@ -38,6 +38,7 @@ export interface IRolePrivileges {
 
 export interface IUser {
   id: number;
+  type?: string
   role_id: number;
   role?: IRole,
   username: string,
@@ -47,7 +48,6 @@ export interface IUser {
   last_name: string,
   status: boolean,
   permissions?: number[],
-  uiSettings: string,
   customerId: number,
   customer: ICustomer,
   customer_id: number,
@@ -56,7 +56,8 @@ export interface IUser {
   created_by: any,
   updated_by: any,
   userInfo?: IUserInfo,
-  ui_settings: any
+  ui_settings: any,
+  timezone: any
 }
 
 export interface IAuditionedUser {

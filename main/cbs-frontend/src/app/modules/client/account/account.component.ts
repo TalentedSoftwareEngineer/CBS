@@ -9,7 +9,7 @@ import {IUser, IRole} from "../../../models/user";
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
-import { EMAIL_REG_EXP, SUPER_ADMIN_ID, SUPER_ADMIN_ROLE_ID } from '../../constants';
+import { EMAIL_REG_EXP, SUPER_ADMIN_ID, SUPER_ADMIN_ROLE_ID, TIMEZONE } from '../../constants';
 
 @Component({
   selector: 'app-account',
@@ -22,15 +22,17 @@ export class AccountComponent implements OnInit {
 
   roles: any[] = [];
   customers: any[] = [];
-  input_username: string|number|undefined|null = ''
+  timezones: any[] = TIMEZONE
+  input_username: any = ''
   validUsername: boolean = true;
   input_customer_id: any = ''
   input_role_id: any = ''
-  input_email: string|number|undefined|null = ''
+  input_timezone: any = ''
+  input_email: any = ''
   validEmail: boolean = true;
-  input_first_name: string|number|undefined|null = ''
+  input_first_name: any = ''
   validFirstName: boolean = true;
-  input_last_name: string|number|undefined|null = ''
+  input_last_name: any = ''
   validLastName: boolean = true;
   input_password: string|number|undefined|null = ''
   validPassword: boolean = true;
@@ -73,6 +75,7 @@ export class AccountComponent implements OnInit {
         this.input_username = res.username;
         this.input_customer_id = {name: `${res.customer.company_name} (${res.customer.company_id})`, value: res.customer?.id};
         this.input_role_id = {name: res.role?.name, value: res.role?.id};
+        this.input_timezone = res.timezone;
         this.input_email = res.email;
         this.input_first_name = res.first_name;
         this.input_last_name = res.last_name;
@@ -134,13 +137,14 @@ export class AccountComponent implements OnInit {
     } else {
       this.validEmail = false;
     }
-    
+
   }
 
   onMainUpdate = async () => {
     let username = this.input_username;
     let customer_id = this.input_customer_id?.value;
     let role_id = this.input_role_id?.value;
+    let timezone = this.input_timezone
     let email = this.input_email;
     let first_name = this.input_first_name;
     let last_name = this.input_last_name;
@@ -165,8 +169,10 @@ export class AccountComponent implements OnInit {
       first_name: first_name,
       last_name: last_name,
       customer_id: customer_id,
-      role_id: role_id
+      role_id: role_id,
+      timezone: timezone
     }).pipe(tap(res=>{
+      this.store.storeUser({...this.store.getUser(), username, email: email, first_name, last_name, customer_id, role_id, timezone});
       this.showSuccess('Successfully Updated!');
     })).toPromise();
   }
@@ -176,6 +182,7 @@ export class AccountComponent implements OnInit {
       this.input_username = res.username;
       this.input_customer_id = {name: `${res.customer.company_name} (${res.customer.company_id})`, value: res.customer?.id};
       this.input_role_id = {name: res.role?.name, value: res.role?.id};
+      this.input_timezone = res.timezone
       this.input_email = res.email;
       this.input_first_name = res.first_name;
       this.input_last_name = res.last_name;

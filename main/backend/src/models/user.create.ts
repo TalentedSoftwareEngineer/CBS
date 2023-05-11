@@ -8,6 +8,8 @@ export class UserCreateRequest {
     first_name: string;
     last_name: string;
 
+    timezone?: string;
+
     customer_id: number;
     role_id: number;
 

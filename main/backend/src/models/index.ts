@@ -24,4 +24,5 @@ export * from './vendor-rate.model';
 export * from './cdr-server.model';
 export * from './cdr-history.model';
 export * from './tfn-number.model';
-export * from './lrn-number.model';
+export * from './statement.model';
+export * from './customer-product.model';

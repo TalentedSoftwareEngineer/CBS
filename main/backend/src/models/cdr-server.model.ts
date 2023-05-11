@@ -84,11 +84,6 @@ export class CdrServer extends Entity {
   lnp_server?: string;
 
   @property({
-    type: 'string',
-  })
-  table_name?: string;
-
-  @property({
     type: 'date',
   })
   created_at?: string;

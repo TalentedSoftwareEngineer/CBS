@@ -45,6 +45,7 @@ import {CalendarModule} from 'primeng/calendar';
 import { TagModule } from 'primeng/tag';
 import {InputNumberModule} from 'primeng/inputnumber';
 import {InputMaskModule} from 'primeng/inputmask';
+import {PickListModule} from 'primeng/picklist';
 
 // @ts-ignore
 import {CountToModule} from "angular-count-to";
@@ -78,6 +79,16 @@ import { PhoneFormatPipe } from 'src/app/pipes/phone-format.pipe';
 import { DurationRangeComponent } from 'src/app/components/duration-range/duration-range.component';
 import { CallCountRangeComponent } from 'src/app/components/call-count-range/call-count-range.component';
 import { LrnComponent } from './lrn/lrn.component';
+import { AutoGenerateStatementComponent } from './auto-generate-statement/auto-generate-statement.component';
+import { CreateBillingStatementComponent } from './create-billing-statement/create-billing-statement.component';
+import { ViewBillingStatementComponent } from './view-billing-statement/view-billing-statement.component';
+import { TaxManagementComponent } from './tax-management/tax-management.component';
+import { RerateCallsComponent } from './rerate-calls/rerate-calls.component';
+import { AutoGenerateInvoiceComponent } from './auto-generate-invoice/auto-generate-invoice.component';
+import { CustomerPaymentComponent } from './customer-payment/customer-payment.component';
+import { StatementAccountComponent } from './statement-account/statement-account.component';
+import { CustomerAccountComponent } from './customer-account/customer-account.component';
+import {BlockUIModule} from "primeng/blockui";
 
 @NgModule({
   imports: [
@@ -89,6 +100,7 @@ import { LrnComponent } from './lrn/lrn.component';
 
     // primeng component modules
     MenuModule,
+    BlockUIModule,
     ButtonModule,
     InputTextModule,
     InputSwitchModule,
@@ -125,6 +137,7 @@ import { LrnComponent } from './lrn/lrn.component';
     TagModule,
     InputNumberModule,
     InputMaskModule,
+    PickListModule,
     // ---------------------------------
 
     CountToModule,
@@ -150,6 +163,7 @@ import { LrnComponent } from './lrn/lrn.component';
     ClientActivitiesComponent,
     ShortCutsComponent,
     AccountComponent,
+    CustomerAccountComponent,
     LogoComponent,
     BannerComponent,
     CustomerEditComponent,
@@ -161,7 +175,16 @@ import { LrnComponent } from './lrn/lrn.component';
     PhoneFormatPipe,
     DurationRangeComponent,
     CallCountRangeComponent,
-    LrnComponent
+    LrnComponent,
+    AutoGenerateStatementComponent,
+    CreateBillingStatementComponent,
+    ViewBillingStatementComponent,
+    TaxManagementComponent,
+    RerateCallsComponent,
+    AutoGenerateInvoiceComponent,
+    CustomerPaymentComponent,
+    StatementAccountComponent,
+    CustomerAccountComponent
   ],
   providers: [],
   exports: [

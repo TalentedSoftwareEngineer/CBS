@@ -137,6 +137,8 @@ export class UserController {
     user.last_name = req.last_name
     user.customer_id = req.customer_id
     user.role_id = req.role_id
+    user.timezone = req.timezone
+
     user.created_by = profile.user.id
     user.created_at = new Date().toISOString()
     user.updated_by = profile.user.id
@@ -279,7 +281,7 @@ export class UserController {
     // @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
   ): Promise<User> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.READ_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.READ_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include = []
@@ -349,7 +351,7 @@ export class UserController {
       user: Omit<User, 'id,created_at,created_by,updated_at,updated_by,status,ui_settings'>, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     const already = await this.credentialsRepository.findOne({where: {username: user.username}})
@@ -389,7 +391,7 @@ export class UserController {
       user: UserUISettingsRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     await this.userRepository.updateById(id, {
@@ -422,7 +424,7 @@ export class UserController {
       user: Omit<UserInfo, 'id,created_at,created_by,updated_at,updated_by'>, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     user.updated_by = profile.user.id
@@ -460,7 +462,7 @@ export class UserController {
       password: UserPasswordUpdateRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     const user = await this.credentialsRepository.findOne({where: {and: [ {type: USER_TYPE.USER, user_id: id} ]}})
@@ -498,7 +500,7 @@ export class UserController {
     @param.path.number('id') id: number
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
+    if (!(profile.type==USER_TYPE.USER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_USERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     const user = await this.userRepository.findById(id)

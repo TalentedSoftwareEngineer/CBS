@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:dev": "ng build --configuration development --build-optimizer",
     "build:prod": "ng build --configuration production --build-optimizer",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -27,6 +28,7 @@
     "date-fns-tz": "^2.0.0",
     "google-libphonenumber": "^3.2.32",
     "immer": "^9.0.19",
+    "jspdf": "^2.5.1",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "primeflex": "^3.3.0",

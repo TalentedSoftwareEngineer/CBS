@@ -4,6 +4,7 @@ import {CustomerInfo} from './customer-info.model';
 import {CustomerBilling} from './customer-billing.model';
 import {CustomerResourceGroup} from './customer-resource-group.model';
 import {CustomerRate} from './customer-rate.model';
+import {CustomerProduct} from './customer-product.model';
 
 @model({
   name: 'customer'
@@ -68,7 +69,12 @@ export class Customer extends Entity {
   @property({
     type: 'string',
   })
-  settings?: string;
+  ui_settings?: string;
+
+  @property({
+    type: 'string',
+  })
+  timezone?: string;
 
   @property({
     type: 'string',
@@ -97,6 +103,12 @@ export class Customer extends Entity {
   succ_duration?: number;
 
   @property({
+    type: 'boolean',
+    default: false,
+  })
+  auto_statement?: boolean;
+
+  @property({
     type: 'date',
   })
   created_at?: string;
@@ -123,6 +135,9 @@ export class Customer extends Entity {
 
   @hasMany(() => CustomerRate, {keyTo: 'customer_id'})
   customerRates: CustomerRate[];
+
+  @hasOne(() => CustomerProduct, {keyTo: 'id'})
+  customerProduct: CustomerProduct;
 
   constructor(data?: Partial<Customer>) {
     super(data);

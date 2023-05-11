@@ -102,36 +102,8 @@ export class ManageCustomerComponent implements OnInit {
   billingCycleOptions: any[] = [
     {name: 'None', value: -1},
     {name: 'Manual Bill/Statement', value: 0},
-    {name: '1 Day', value: 1},
-    {name: '2 Days', value: 2},
-    {name: '3 Days', value: 3},
-    {name: '4 Days', value: 4},
-    {name: '5 Days', value: 5},
-    {name: '6 Days', value: 6},
-    {name: '7 Days', value: 7},
-    {name: '8 Days', value: 8},
-    {name: '9 Days', value: 9},
-    {name: '10 Days', value: 10},
-    {name: '11 Days', value: 11},
-    {name: '12 Days', value: 12},
-    {name: '13 Days', value: 13},
-    {name: '14 Days', value: 14},
-    {name: '15 Days', value: 15},
-    {name: '16 Days', value: 16},
-    {name: '17 Days', value: 17},
-    {name: '18 Days', value: 18},
-    {name: '19 Days', value: 19},
-    {name: '20 Days', value: 20},
-    {name: '21 Days', value: 21},
-    {name: '22 Days', value: 22},
-    {name: '23 Days', value: 23},
-    {name: '24 Days', value: 24},
-    {name: '25 Days', value: 25},
-    {name: '26 Days', value: 26},
-    {name: '27 Days', value: 27},
-    {name: '28 Days', value: 28},
-    {name: '29 Days', value: 29},
-    {name: '30 Days', value: 30},
+    {name: 'Weekly', value: 7},
+    {name: 'Monthly', value: 30},
   ];
 
   statusOptions: any[] = [
@@ -227,8 +199,15 @@ export class ManageCustomerComponent implements OnInit {
         .pipe(tap(async (response: any[]) => {
           this.customers = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
           });
 
           for (let item of response) {

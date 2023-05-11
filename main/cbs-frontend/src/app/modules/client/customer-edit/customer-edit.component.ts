@@ -10,7 +10,7 @@ import { ROUTES } from 'src/app/app.routes';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { toBase64 } from 'src/app/helper/utils';
-import { PAGE_SIZE_OPTIONS } from '../../constants';
+import { PAGE_SIZE_OPTIONS, SUPER_ADMIN_ID } from '../../constants';
 
 @Component({
   selector: 'app-customer-edit',
@@ -18,6 +18,7 @@ import { PAGE_SIZE_OPTIONS } from '../../constants';
   styleUrls: ['./customer-edit.component.scss']
 })
 export class CustomerEditComponent implements OnInit {
+  isSuperAdmin: boolean = false;
 
   //resource group table
   pageSize = 100
@@ -130,6 +131,17 @@ export class CustomerEditComponent implements OnInit {
     init_dur: new FormControl('', Validators.required),
     succ_dur: new FormControl('', Validators.required),
   });
+  productSettingsForm: FormGroup = new FormGroup({
+    accounting_type: new FormControl(0),
+    // postpaid_billing: new FormControl(false),
+    local_did_fee: new FormControl(2.00),
+    local_did_setup_fee: new FormControl(0.00),
+    toll_free_fee: new FormControl(3.00),
+    toll_free_setup_fee: new FormControl(0.00),
+    // inbound_cost_per_minute: new FormControl(0.0),
+    // outbound_cost_per_minute: new FormControl(0.0),
+    // rate_type: new FormControl('60/60'),
+  });
 
   directionOptions: any[] = [
     {name: 'INBOUND', value: 'INBOUND'},
@@ -161,36 +173,8 @@ export class CustomerEditComponent implements OnInit {
   billingCycleOptions: any[] = [
     {name: 'None', value: -1},
     {name: 'Manual Bill/Statement', value: 0},
-    {name: '1 Day', value: 1},
-    {name: '2 Days', value: 2},
-    {name: '3 Days', value: 3},
-    {name: '4 Days', value: 4},
-    {name: '5 Days', value: 5},
-    {name: '6 Days', value: 6},
-    {name: '7 Days', value: 7},
-    {name: '8 Days', value: 8},
-    {name: '9 Days', value: 9},
-    {name: '10 Days', value: 10},
-    {name: '11 Days', value: 11},
-    {name: '12 Days', value: 12},
-    {name: '13 Days', value: 13},
-    {name: '14 Days', value: 14},
-    {name: '15 Days', value: 15},
-    {name: '16 Days', value: 16},
-    {name: '17 Days', value: 17},
-    {name: '18 Days', value: 18},
-    {name: '19 Days', value: 19},
-    {name: '20 Days', value: 20},
-    {name: '21 Days', value: 21},
-    {name: '22 Days', value: 22},
-    {name: '23 Days', value: 23},
-    {name: '24 Days', value: 24},
-    {name: '25 Days', value: 25},
-    {name: '26 Days', value: 26},
-    {name: '27 Days', value: 27},
-    {name: '28 Days', value: 28},
-    {name: '29 Days', value: 29},
-    {name: '30 Days', value: 30},
+    {name: 'Weekly', value: 7},
+    {name: 'Monthly', value: 30},
   ];
 
   statusOptions: any[] = [
@@ -274,6 +258,27 @@ export class CustomerEditComponent implements OnInit {
   isUpLoading: boolean = false;
   isRateUpLoading: boolean = false;
 
+  //Product Settings
+  accountingType = [
+    { name: 'Enabled', value: 1 },
+    { name: 'Disabled', value: 0 },
+  ]
+  selectedAccountingType = 0
+  isPostpaid = false;
+
+  localdid: number = 2.00;
+  localdid_fee: number = 0.00;
+  tollfree: number = 3.00;
+  tollfree_fee: number = 0.00;
+  inbound_cost_per_minute: number = 0.0;
+  outbound_cost_per_minute: number = 0.0;
+
+  rateTypes = [
+    { name: '60/60', value: '60/60' },
+    { name: '6/6', value: '6/6' },
+  ]
+  selectedRateType = '60/60'
+
   constructor(
     public api: ApiService,
     public store: StoreService,
@@ -305,9 +310,9 @@ export class CustomerEditComponent implements OnInit {
       return
     }
 
-    // this.store.state$.subscribe(async (state)=> {
-
-    // })
+    this.store.state$.subscribe(async (state)=> {
+      this.isSuperAdmin = state.user?.id == SUPER_ADMIN_ID;
+    })
 
     await new Promise<void>(resolve=> {
       this.activatedRoute.queryParams.subscribe((params) => {
@@ -344,8 +349,15 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (groupsRes: any[]) => {
           this.groups = [];
           groupsRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
             // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
             // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
@@ -382,8 +394,15 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (ratesRes: any[]) => {
           this.rates = [];
           ratesRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
             // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
             // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
           });
@@ -420,8 +439,15 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (response: any[]) => {
           this.npanxxRates = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
           });
 
           for (let item of response) {
@@ -460,8 +486,15 @@ export class CustomerEditComponent implements OnInit {
         .pipe(tap(async (response: any[]) => {
           this.tfnNumbers = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
             // u.customer_id = u.customer_id ? this.filterCustomerOptions.find(item=>item.value == u.customer_id)?.name : '';
           });
 
@@ -534,6 +567,14 @@ export class CustomerEditComponent implements OnInit {
         method: res.customerBilling?.method ? res.customerBilling?.method : 'ACTIVE',
         cycle: res.customerBilling?.cycle ? res.customerBilling?.cycle : -1,
         start: res.customerBilling?.start != undefined ? new Date(res.customerBilling?.start) : new Date()
+      });
+
+      this.productSettingsForm.setValue({
+        accounting_type: res.customerProduct?.account_type ? res.customerProduct?.account_type : 0,
+        local_did_fee: res.customerProduct?.local_did_fee ? res.customerProduct?.local_did_fee : 2.00,
+        local_did_setup_fee: res.customerProduct?.local_did_setup_fee ? res.customerProduct?.local_did_setup_fee : 0.00,
+        toll_free_fee: res.customerProduct?.tollfree_fee ? res.customerProduct?.tollfree_fee : 3.00,
+        toll_free_setup_fee: res.customerProduct?.tollfree_setup_fee ? res.customerProduct?.tollfree_setup_fee : 0.00
       });
 
       this.selectRateType = res.rate_type;
@@ -816,7 +857,7 @@ export class CustomerEditComponent implements OnInit {
         this.resourceGroupForm.setValue({
           rgid: res.rgid ? res.rgid : '',
           description: res.description ? res.description : '',
-          partition_id: res.partition_id ? res.partition_id : '',
+          partition_id: (res.partition_id || res.partition_id==0) ? res.partition_id : '',
           ip: res.ip ? res.ip : '',
           active: res.active ? res.active : false,
           direction: res.direction ? res.direction : 'INBOUND',
@@ -963,7 +1004,6 @@ export class CustomerEditComponent implements OnInit {
     }
 
     if(rateModalTitle == 'Add') {
-      // debugger;
       this.api.createRate(this.customer_id, data).subscribe(res=> {
         this.showSuccess('Successfully created!', 'Success');
         this.closeRateModal();
@@ -971,7 +1011,6 @@ export class CustomerEditComponent implements OnInit {
         this.getTotalRatesCount();
       });
     } else if(rateModalTitle=='Edit') {
-      debugger;
       this.api.updateRate(this.clickedId, data).subscribe(res=> {
         this.showSuccess('Successfully updated!', 'Success');
         this.closeRateModal();
@@ -1011,6 +1050,25 @@ export class CustomerEditComponent implements OnInit {
             }
         }
     });
+  }
+
+  onUpdatedProductSettingsSubmit = async () => {
+    if (this.productSettingsForm.invalid) {
+      this.validateAllFormFields(this.productSettingsForm)
+      return
+    }
+
+    let data = {
+      account_type: Boolean(this.productSettingsForm.get('accounting_type')?.value),
+      local_did_fee: Number(this.productSettingsForm.get('local_did_fee')?.value),
+      local_did_setup_fee: Number(this.productSettingsForm.get('local_did_setup_fee')?.value),
+      tollfree_fee: Number(this.productSettingsForm.get('toll_free_fee')?.value),
+      tollfree_setup_fee: Number(this.productSettingsForm.get('toll_free_setup_fee')?.value),
+    }
+
+    await this.api.updateProduct(this.customer_id, data).pipe(tap(res=>{
+      this.showSuccess('Successfully updated!', 'Success');
+    })).toPromise();
   }
 
   onBack = () => {

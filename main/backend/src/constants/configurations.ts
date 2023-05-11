@@ -51,3 +51,13 @@ export const JOB_STATUS = {
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
 }
+
+export const NO_TYPE = {
+  STATEMENT: 'STATEMENT',
+  INVOICE: 'INVOICE',
+  TRANSACTION: 'TRANSACTION',
+}
+
+export const BILLING_STATUS = {
+  NEW: 'NEW',
+}

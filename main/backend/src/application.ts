@@ -15,7 +15,7 @@ import {CronComponent} from '@loopback/cron';
 import {AuthorizationComponent} from '@loopback/authorization';
 import {CredentialsRepository, UserRepository} from './repositories';
 import {
-  BasicAuthenticationUserService,
+  BasicAuthenticationUserService, BillingService,
   CdrService,
   CustomerService,
   FtpService,
@@ -71,13 +71,14 @@ export class BackendApplication extends BootMixin(
     // this.bind(UserServiceBindings.USER_CREDENTIALS_REPOSITORY).toClass(CredentialsRepository);
 
     this.bind(TokenServiceBindings.TOKEN_SECRET).to("cbs_token");
-    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to("3600");
+    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to("86400");
 
     this.service(RoleService)
     this.service(UploadService)
     this.service(CustomerService)
     this.service(FtpService)
     this.service(CdrService)
+    this.service(BillingService)
 
     // cron jobs
     const cdrAuoImportBinding = createBindingFromClass(CdrAutoImport)
@@ -85,8 +86,5 @@ export class BackendApplication extends BootMixin(
 
     const lergAutoUpdateBinding = createBindingFromClass(LergAutoImport)
     this.add(lergAutoUpdateBinding)
-
-    const lrnAutoImportBinding = createBindingFromClass(LrnAutoImport)
-    this.add(lrnAutoImportBinding)
   }
 }

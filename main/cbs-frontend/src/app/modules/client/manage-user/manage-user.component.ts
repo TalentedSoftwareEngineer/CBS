@@ -9,7 +9,7 @@ import {IUser, IRole} from "../../../models/user";
 import { PERMISSIONS } from 'src/app/consts/permissions';
 import { ROUTES } from 'src/app/app.routes';
 import { Router } from '@angular/router';
-import { EMAIL_REG_EXP, PAGE_SIZE_OPTIONS, SUPER_ADMIN_ROLE_ID } from '../../constants';
+import { EMAIL_REG_EXP, PAGE_SIZE_OPTIONS, SUPER_ADMIN_ROLE_ID, TIMEZONE } from '../../constants';
 
 @Component({
   selector: 'app-manage-user',
@@ -42,6 +42,7 @@ export class ManageUserComponent implements OnInit {
   filterCustomerOptions: any[] = [];
   customerFilterValue: number|string = '';
   roles: any[] = [];
+  timezones: any[] = TIMEZONE
   customers: any[] = [];
 
   noNeedEditColumn = false
@@ -53,6 +54,7 @@ export class ManageUserComponent implements OnInit {
   validUsername: boolean = true;
   input_customer_id: any = ''
   input_role_id: any = ''
+  input_timezone: any = ''
   input_email: string|number|undefined|null = ''
   validEmail: boolean = true;
   input_first_name: string|number|undefined|null = ''
@@ -80,6 +82,8 @@ export class ManageUserComponent implements OnInit {
 
   write_permission: boolean = false;
   authUserId = -1;
+
+  allUsers: any[] = []
 
   constructor(
     public api: ApiService,
@@ -119,12 +123,19 @@ export class ManageUserComponent implements OnInit {
       this.authUserId = state.user.id;
     })
 
+    await this.getAllUsers();
     this.getUsersList();
     this.getTotalUsersCount();
     this.getRolesList();
     this.getCustomerList();
   }
 
+  getAllUsers = async () => {
+    await this.api.getUsersListForFilter()
+    .pipe(tap(async (res: IUser[]) => {
+      this.allUsers = res;
+    })).toPromise();
+  }
 
   createData = (name: string, value: number) => {
     return {
@@ -142,10 +153,19 @@ export class ManageUserComponent implements OnInit {
         .pipe(tap(async (usersRes: IUser[]) => {
           this.users = [];
           usersRes.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
-            u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
+            // u.created_by = u.created_by ? this.getAuditionedUsername(u.created_by, username=>{u.created_by=username}) : '';
+            // u.updated_by = u.updated_by ? this.getAuditionedUsername(u.updated_by, username=>u.updated_by=username) : '';
+            u.created_by = u.created_by ? this.allUsers.find((item: any) => item.id==u.created_by)?.username : '';
+            u.updated_by = u.updated_by ? this.allUsers.find((item: any) => item.id==u.updated_by)?.username  : '';
           });
 
           for (let user of usersRes) {
@@ -247,6 +267,7 @@ export class ManageUserComponent implements OnInit {
     let last_name =  this.input_last_name;
     let customer_id = this.input_customer_id.value;
     let role_id = this.input_role_id.value;
+    let timezone = this.input_timezone;
     let password = this.input_password;
     let confirm_password = this.input_confirm_password;
     let country = this.input_country;
@@ -284,6 +305,7 @@ export class ManageUserComponent implements OnInit {
         username: username,
         customer_id: customer_id,
         role_id: role_id,
+        timezone: timezone,
         email: email,
         first_name: first_name,
         last_name: last_name,
@@ -323,6 +345,7 @@ export class ManageUserComponent implements OnInit {
       this.input_username = res.username;
       this.input_customer_id = {name: `${res.customer.company_name} (${res.customer.company_id})`, value: res.customer?.id};
       this.input_role_id = {name: res.role?.name, value: res.role?.id};
+      this.input_timezone = res.timezone;
       this.input_email = res.email;
       this.input_first_name = res.first_name;
       this.input_last_name = res.last_name;
@@ -368,6 +391,7 @@ export class ManageUserComponent implements OnInit {
     this.input_username = ''
     this.input_customer_id = undefined
     this.input_role_id = undefined
+    this.input_timezone = ''
     this.input_email = ''
     this.input_first_name = ''
     this.input_last_name = ''
@@ -408,6 +432,7 @@ export class ManageUserComponent implements OnInit {
     let username = this.input_username;
     let customer_id = this.input_customer_id?.value;
     let role_id = this.input_role_id?.value;
+    let timezone = this.input_timezone;
     let email = this.input_email;
     let first_name = this.input_first_name;
     let last_name = this.input_last_name;
@@ -432,7 +457,8 @@ export class ManageUserComponent implements OnInit {
       first_name: first_name,
       last_name: last_name,
       customer_id: customer_id,
-      role_id: role_id
+      role_id: role_id,
+      timezone: String(timezone)
     }).pipe(tap(res=>{
       this.showSuccess('Successfully Updated!');
       this.closeUserModal();
@@ -445,6 +471,7 @@ export class ManageUserComponent implements OnInit {
       this.input_username = res.username;
       this.input_customer_id = {name: `${res.customer.company_name} (${res.customer.company_id})`, value: res.customer?.id};
       this.input_role_id = {name: res.role?.name, value: res.role?.id};
+      this.input_timezone = res.timezone;
       this.input_email = res.email;
       this.input_first_name = res.first_name;
       this.input_last_name = res.last_name;

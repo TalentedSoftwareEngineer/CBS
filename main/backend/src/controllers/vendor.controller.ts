@@ -9,7 +9,7 @@ import {
   CredentialsRepository,
   CustomerRateRepository,
   CustomerRepository,
-  CustomerResourceGroupRepository, VendorRateRepository,
+  CustomerResourceGroupRepository, StatementRepository, VendorRateRepository,
 } from '../repositories';
 import {inject, service} from '@loopback/core';
 import {RoleService} from '../services';
@@ -20,7 +20,7 @@ import {
   CustomerBilling,
   CustomerCreateRequest,
   CustomerInfo,
-  CustomerPasswordUpdateRequest,
+  CustomerPasswordUpdateRequest, UserPasswordUpdateRequest, UserUISettingsRequest,
 } from '../models';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {PERMISSIONS} from '../constants/permissions';
@@ -32,16 +32,12 @@ import {genSalt, hash} from 'bcryptjs';
 @authenticate('jwt')
 export class VendorController {
   constructor(
-    @repository(CustomerRepository)
-    public customerRepository : CustomerRepository,
-    @repository(CredentialsRepository)
-    public credentialsRepository : CredentialsRepository,
-    @repository(CustomerResourceGroupRepository)
-    public customerResourceGroupRepository : CustomerResourceGroupRepository,
-    @repository(VendorRateRepository)
-    public vendorRateRepository : VendorRateRepository,
-    @service(RoleService)
-    public roleService : RoleService,
+    @repository(CustomerRepository) public customerRepository : CustomerRepository,
+    @repository(CredentialsRepository) public credentialsRepository : CredentialsRepository,
+    @repository(CustomerResourceGroupRepository) public customerResourceGroupRepository : CustomerResourceGroupRepository,
+    @repository(VendorRateRepository) public vendorRateRepository : VendorRateRepository,
+    @repository(StatementRepository) public statementRepository : StatementRepository,
+    @service(RoleService) public roleService : RoleService,
   ) {}
 
   @post('/vendors')
@@ -208,7 +204,7 @@ export class VendorController {
     @param.path.number('id') id: number,
   ): Promise<any> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.READ_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.READ_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include: any[] = [];
@@ -237,15 +233,15 @@ export class VendorController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewGeneralVendor',
-            exclude: ['id', 'type', 'allowed', 'settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            exclude: ['id', 'type', 'allowed', 'ui_settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-      customer: Omit<Customer, 'id,type,allowed,settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
+      customer: Omit<Customer, 'id,type,allowed,ui_settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (customer.company_id=="" || customer.company_name==""
@@ -278,15 +274,15 @@ export class VendorController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewRatesVendor',
-            exclude: ['id', 'type', 'allowed', 'settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            exclude: ['id', 'type', 'allowed', 'ui_settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-      customer: Omit<Customer, 'id,type,allowed,settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
+      customer: Omit<Customer, 'id,type,allowed,ui_settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (customer.rate_type=="")
@@ -318,7 +314,7 @@ export class VendorController {
       customer: Omit<CustomerBilling, 'id,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     const billing = await this.customerRepository.customerBilling(id).get()
@@ -375,7 +371,7 @@ export class VendorController {
       password: CustomerPasswordUpdateRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (password.allowed && (password.username=="" || password.new_password==""))
@@ -404,6 +400,8 @@ export class VendorController {
         credentials.created_by = profile.user.id
 
         isNew = true
+      } else {
+        credentials.username = password.username!
       }
 
       credentials.salt = await genSalt()
@@ -439,7 +437,7 @@ export class VendorController {
       customer: Omit<CustomerInfo, 'id,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     const additional = await this.customerRepository.customerInfo(id).get()
@@ -477,10 +475,15 @@ export class VendorController {
     if (rate)
       throw new HttpErrors.BadRequest("There are some INTER/INTRA Rates in this vendor. Please try again after remove all Rates.")
 
+    const stmt = await this.statementRepository.findOne({where: {customer_id: id}})
+    if (stmt)
+      throw new HttpErrors.BadRequest("There are some Statements in this customer.")
+
     const tx = await this.customerRepository.beginTransaction()
 
     await this.customerRepository.customerInfo(id).delete()
     await this.customerRepository.customerBilling(id).delete()
+    await this.customerRepository.customerProduct(id).delete()
     await this.credentialsRepository.deleteAll({and: [ {user_id: id}, {type: USER_TYPE.VENDOR} ]})
     await this.customerRepository.deleteById(id);
 
@@ -529,4 +532,95 @@ export class VendorController {
     await this.roleService.createDefaultRoles(customer)
   }
 
+  @patch('/vendors/{id}/ui_settings', {
+    description: 'Update vendor ui settings',
+    responses: {
+      '204': {
+        description: 'User PATCH success',
+      }
+    }
+  })
+  async updateUISettings(
+      @param.path.number('id') id: number,
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                ui_settings: {
+                  type: "string",
+                },
+              }
+            },
+          },
+        },
+      })
+          user: UserUISettingsRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    await this.customerRepository.updateById(id, {
+      ui_settings: user.ui_settings,
+      // updated_by: profile.user.id,
+      updated_at: new Date().toISOString()
+    });
+  }
+
+  @patch('/vendors/{id}/account_password', {
+    description: 'Update vendor password',
+    responses: {
+      '204': {
+        description: 'User PATCH success',
+      }
+    }
+  })
+  async updateAccountPassword(
+      @param.path.number('id') id: number,
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                old_password: {
+                  type: 'string',
+                },
+                new_password: {
+                  type: 'string',
+                },
+              }
+            },
+          },
+        },
+      })
+          password: UserPasswordUpdateRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!(profile.type==USER_TYPE.VENDOR && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_VENDORS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    const user = await this.credentialsRepository.findOne({where: {and: [ {type: USER_TYPE.VENDOR, user_id: id} ]}})
+    if (!user)
+      throw new HttpErrors.BadRequest("credentials.password' is null")
+
+    if (id == profile.user.id) {
+      if (password.old_password) {
+        const old_password_hash = await hash(password.old_password, user.salt);
+        if (old_password_hash!=user.password)
+          throw new HttpErrors.BadRequest("old password is wrong!")
+      } else {
+        throw new HttpErrors.BadRequest("old password is wrong!")
+      }
+    }
+
+    user.salt = await genSalt()
+    user.password = await hash(password.new_password, user.salt)
+
+    user.updated_by = profile.user.id
+    user.updated_at = new Date().toISOString()
+    await this.credentialsRepository.save(user)
+  }
 }

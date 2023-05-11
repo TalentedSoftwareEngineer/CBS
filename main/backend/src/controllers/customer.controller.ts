@@ -22,14 +22,14 @@ import {
   Customer, CustomerBilling,
   CustomerCreateRequest,
   CustomerInfo,
-  CustomerPasswordUpdateRequest, TfnNumber,
-  UserInfo,
+  CustomerPasswordUpdateRequest, CustomerProduct, TfnNumber,
+  UserInfo, UserPasswordUpdateRequest, UserUISettingsRequest,
 } from '../models';
 import {
   CredentialsRepository,
   CustomerRateRepository,
   CustomerRepository,
-  CustomerResourceGroupRepository, TfnNumberRepository,
+  CustomerResourceGroupRepository, StatementRepository, TfnNumberRepository,
 } from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
@@ -37,7 +37,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {PERMISSIONS} from '../constants/permissions';
 import {MESSAGES} from '../constants/messages';
 import DataUtils from '../utils/data';
-import {RATE_TYPE, USER_TYPE} from '../constants/configurations';
+import {RATE_TYPE, SUPER_ADMIN_ROLE, USER_TYPE} from '../constants/configurations';
 import {genSalt, hash} from 'bcryptjs';
 import {RoleService} from '../services';
 import { UserRepository } from '@loopback/authentication-jwt';
@@ -45,19 +45,14 @@ import { UserRepository } from '@loopback/authentication-jwt';
 @authenticate('jwt')
 export class CustomerController {
   constructor(
-    @repository(CustomerRepository)
-    public customerRepository : CustomerRepository,
-    @repository(UserRepository)
-    public userRepository : UserRepository,
-    @repository(CredentialsRepository)
-    public credentialsRepository : CredentialsRepository,
-    @repository(CustomerResourceGroupRepository)
-    public customerResourceGroupRepository : CustomerResourceGroupRepository,
-    @repository(CustomerRateRepository)
-    public customerRateRepository : CustomerRateRepository,
+    @repository(CustomerRepository) public customerRepository : CustomerRepository,
+    @repository(UserRepository) public userRepository : UserRepository,
+    @repository(CredentialsRepository) public credentialsRepository : CredentialsRepository,
+    @repository(CustomerResourceGroupRepository) public customerResourceGroupRepository : CustomerResourceGroupRepository,
+    @repository(CustomerRateRepository) public customerRateRepository : CustomerRateRepository,
     @repository(TfnNumberRepository) public tfnNumberRepository : TfnNumberRepository,
-    @service(RoleService)
-    public roleService : RoleService,
+    @repository(StatementRepository) public statementRepository : StatementRepository,
+    @service(RoleService) public roleService : RoleService,
   ) {}
 
   @post('/customers')
@@ -214,12 +209,13 @@ export class CustomerController {
     @param.path.number('id') id: number,
   ): Promise<any> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.READ_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.READ_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let include: any[] = [];
     include.push({relation: 'customerInfo'})
     include.push({relation: 'customerBilling'})
+    include.push({relation: 'customerProduct'})
 
     const customer: any = await this.customerRepository.findById(id, {include: include});
     if (customer.allowed) {
@@ -243,15 +239,15 @@ export class CustomerController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewGeneralCustomer',
-            exclude: ['id', 'type', 'allowed', 'settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            exclude: ['id', 'type', 'allowed', 'ui_settings', 'default_rate', 'rate_type', 'init_duration', 'succ_duration', 'flat_rate', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-    customer: Omit<Customer, 'id,type,allowed,settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
+    customer: Omit<Customer, 'id,type,allowed,ui_settings,default_rate,rate_type,init_duration,succ_duration,flat_rate,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (customer.company_id=="" || customer.company_name==""
@@ -284,15 +280,15 @@ export class CustomerController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewRatesCustomer',
-            exclude: ['id', 'type', 'allowed', 'settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            exclude: ['id', 'type', 'allowed', 'ui_settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-      customer: Omit<Customer, 'id,type,allowed,settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
+      customer: Omit<Customer, 'id,type,allowed,ui_settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (customer.rate_type=="")
@@ -324,10 +320,15 @@ export class CustomerController {
       customer: Omit<CustomerBilling, 'id,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    const billing = await this.customerRepository.customerBilling(id).get()
+    let billing;
+    try {
+      billing = await this.customerRepository.customerBilling(id).get()
+    } catch (err) {
+    }
+
     if (billing) {
 
     } else {
@@ -381,7 +382,7 @@ export class CustomerController {
       password: CustomerPasswordUpdateRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (id!=profile.user.id && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     if (password.allowed && (password.username=="" || password.new_password==""))
@@ -410,6 +411,8 @@ export class CustomerController {
         credentials.created_by = profile.user.id
 
         isNew = true
+      } else {
+        credentials.username = password.username!
       }
 
       credentials.salt = await genSalt()
@@ -445,10 +448,15 @@ export class CustomerController {
       customer: Omit<CustomerInfo, 'id,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
-    const additional = await this.customerRepository.customerInfo(id).get()
+    let additional;
+    try {
+      additional = await this.customerRepository.customerInfo(id).get()
+    } catch (err) {
+    }
+
     if (additional) {
 
     } else {
@@ -475,6 +483,10 @@ export class CustomerController {
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     // TODO - check all foreign keys
+    const user = await this.userRepository.findOne({where: {customer_id: id}})
+    if (user)
+      throw new HttpErrors.BadRequest("There are some users using this customer.")
+
     const rg = await this.customerResourceGroupRepository.findOne({where: { customer_id: id }})
     if (rg)
       throw new HttpErrors.BadRequest("There are some Resource Groups in this customer. Please try again after remove all RGs.")
@@ -487,14 +499,15 @@ export class CustomerController {
     if (tfn)
       throw new HttpErrors.BadRequest("There are some TFN Numbers assigned to this customer.")
 
-    const user = await this.userRepository.findOne({where: {customer_id: id}})
-    if (user)
-      throw new HttpErrors.BadRequest("There are some users using this customer.")
+    const stmt = await this.statementRepository.findOne({where: {customer_id: id}})
+    if (stmt)
+      throw new HttpErrors.BadRequest("There are some Statements in this customer.")
 
     const tx = await this.customerRepository.beginTransaction()
 
     await this.customerRepository.customerBilling(id).delete()
     await this.customerRepository.customerInfo(id).delete()
+    await this.customerRepository.customerProduct(id).delete()
     await this.credentialsRepository.deleteAll({and: [ {user_id: id}, {type: USER_TYPE.CUSTOMER} ]})
     await this.customerRepository.deleteById(id);
 
@@ -522,6 +535,29 @@ export class CustomerController {
   ): Promise<Customer[]> {
     const profile = JSON.parse(currentUserProfile[securityId]);
     return this.customerRepository.find({where: {type: USER_TYPE.CUSTOMER}});
+  }
+
+  @get('/customers/for_filter_all', {
+    description: 'Get customers without checking permission',
+    responses: {
+      '200': {
+        description: 'Array of Customer model instances',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(Customer, {includeRelations: true}),
+            },
+          },
+        },
+      }
+    }
+  })
+  async for_filter_all(
+      @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<Customer[]> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    return this.customerRepository.find({});
   }
 
   @patch('/customers/{id}/roles')
@@ -555,7 +591,7 @@ export class CustomerController {
     @param.query.string('value') value: string,
   ): Promise<Count> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let customs = [{customer_id: id}]
@@ -587,7 +623,7 @@ export class CustomerController {
     @param.query.string('value') value: string,
   ): Promise<TfnNumber[]> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    if (!profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
       throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
 
     let customs = [{customer_id: id}]
@@ -611,4 +647,137 @@ export class CustomerController {
       ['tfn_num', 'trans_num', 'resp_org', 'price'],
       'tfn_num,trans_num,price', customs, include));
   }
+
+  @patch('/customers/{id}/product')
+  @response(204, {
+    description: 'Customer PATCH success',
+  })
+  async updateProduct(
+      @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+      @param.path.number('id') id: number,
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(CustomerProduct, {
+              title: 'NewCustomerProduct',
+              exclude: ['id','created_at', 'updated_at'],
+            }),
+          },
+        },
+      })
+          customer: Omit<CustomerProduct, 'id,created_at,updated_at'>,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (profile.type!=USER_TYPE.USER || profile.user.role_id!=SUPER_ADMIN_ROLE)
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    let product;
+    try {
+      product = await this.customerRepository.customerProduct(id).get()
+    } catch (err) {
+    }
+
+    if (product) {
+
+    } else {
+      customer.created_at = new Date().toISOString()
+    }
+
+    customer.updated_at = new Date().toISOString()
+
+    product ? await this.customerRepository.customerProduct(id).patch(customer) : await this.customerRepository.customerProduct(id).create(customer)
+  }
+
+  @patch('/customers/{id}/ui_settings', {
+    description: 'Update customer ui settings',
+    responses: {
+      '204': {
+        description: 'User PATCH success',
+      }
+    }
+  })
+  async updateUISettings(
+      @param.path.number('id') id: number,
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                ui_settings: {
+                  type: "string",
+                },
+              }
+            },
+          },
+        },
+      })
+          user: UserUISettingsRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    await this.customerRepository.updateById(id, {
+      ui_settings: user.ui_settings,
+      // updated_by: profile.user.id,
+      updated_at: new Date().toISOString()
+    });
+  }
+
+  @patch('/customers/{id}/account_password', {
+    description: 'Update customer password',
+    responses: {
+      '204': {
+        description: 'User PATCH success',
+      }
+    }
+  })
+  async updateAccountPassword(
+      @param.path.number('id') id: number,
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                old_password: {
+                  type: 'string',
+                },
+                new_password: {
+                  type: 'string',
+                },
+              }
+            },
+          },
+        },
+      })
+          password: UserPasswordUpdateRequest, @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<void> {
+    const profile = JSON.parse(currentUserProfile[securityId]);
+    if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) &&  !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))
+      throw new HttpErrors.Unauthorized(MESSAGES.NO_PERMISSION)
+
+    const user = await this.credentialsRepository.findOne({where: {and: [ {type: USER_TYPE.CUSTOMER, user_id: id} ]}})
+    if (!user)
+      throw new HttpErrors.BadRequest("credentials.password' is null")
+
+    if (id == profile.user.id) {
+      if (password.old_password) {
+        const old_password_hash = await hash(password.old_password, user.salt);
+        if (old_password_hash!=user.password)
+          throw new HttpErrors.BadRequest("old password is wrong!")
+      } else {
+        throw new HttpErrors.BadRequest("old password is wrong!")
+      }
+    }
+
+    user.salt = await genSalt()
+    user.password = await hash(password.new_password, user.salt)
+
+    user.updated_by = profile.user.id
+    user.updated_at = new Date().toISOString()
+    await this.credentialsRepository.save(user)
+  }
+
 }

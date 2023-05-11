@@ -53,7 +53,7 @@ export class FtpService {
 
       client.connect(config)
         .then(() => {
-          let remoteFile = localPath + "/" + server.table_name + "/"
+          let remoteFile = localPath + "/" // + server.table_name + "/"
           if (prefix)
             remoteFile += prefix
           remoteFile += file

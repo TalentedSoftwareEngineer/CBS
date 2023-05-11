@@ -274,5 +274,10 @@ export default class DataUtils {
 
         return true
     }
+
+    static pad(str: string, len: number) {
+        str = "00000000000000000000000000000000000000"+str
+        return str.substring(str.length-len)
+    }
 }
 

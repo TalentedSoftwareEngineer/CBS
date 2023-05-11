@@ -75,106 +75,25 @@ export class LergAutoImport extends CronJob {
 
         const fs = require('fs')
         const es = require('event-stream')
-        const csv = require('fast-csv')
 
         const stream = fs.createReadStream(LERG_HOME + "/" + history.filename+".csv")
           .pipe(es.split())
           .pipe(es.mapSync(async (line: string) => {
             stream.pause()
 
-            // console.log("line: " + line)
-            csv.parseString(line, { delimiter: ",", headers: false })
-              .on('data', async (data: any) => {
-                let npa = data.length>0 ? data[0] : ''
-                let nxx = data.length>1 ? data[1] : ''
-                let thousands = data.length>2 ? data[2] : ''
-                let state = data.length>3 ? data[3] : ''
-                let company = data.length>4 ? data[4] : ''
-                let ocn = data.length>5 ? data[5] : ''
-                let rate_center = data.length>6 ? data[6] : ''
-                let clli = data.length>7 ? data[7] : ''
-                let assign_date = data.length>8 ? data[8] : ''
-                let prefix_type = data.length>9 ? data[9] : ''
-                let switch_name = data.length>10 ? data[10] : ''
-                let switch_type = data.length>11 ? data[11] : ''
-                // let lata = worksheet.getCell('M'+index).value
-                // let company = worksheet.getCell('N'+index).value
-                let lata = data.length>14 ? data[14] : ""
-                let country = data.length>15 ? data[15] : ""
+            const result: any = await this.import(line)
+            completed += result.completed
+            failed += result.failed
+            if (!message.includes(result.message))
+              message += result.message + "\n"
 
-                if (npa==null || npa=="" || nxx==null || nxx=="") {
-                  const err = "NpaNxx is a mandatory field."
-                  if (!message.includes(err))
-                    message += err + "\n"
-                  failed++
-                } else {
-                  let npanxx = npa + nxx
-                  let lerg = await this.lergRepository.findOne({where: {npanxx: npanxx, thousand: thousands}})
-                  if (lerg) {
-                    lerg.lata = lata
-                    lerg.ocn = ocn
-                    if (rate_center!=null && rate_center!="")
-                      lerg.rate_center = rate_center
-                    if (country!=null && country!="")
-                      lerg.country = country
-                    if (state!=null && state!="")
-                      lerg.state = state
-                    if (company!=null && company!="")
-                      lerg.company = company
-                    if (thousands!=null && thousands!="")
-                      lerg.thousand = thousands
-                    if (clli!=null && clli!="")
-                      lerg.clli = clli
+            history.completed = completed
+            history.failed = failed
+            history.message = message
 
-                    if (switch_name!=null && switch_name!="")
-                      lerg.switch_name = switch_name
-                    if (switch_type!=null && switch_type!="")
-                      lerg.switch_type = switch_type
-
-                    if (assign_date!=null && assign_date!="")
-                      lerg.assign_date = assign_date
-                    if (prefix_type!=null && prefix_type!="")
-                      lerg.prefix_type = prefix_type
-
-                    lerg.updated_at = new Date().toISOString()
-
-                    await this.lergRepository.save(lerg)
-                    completed++
-
-                  }
-                  else {
-                    lerg = new Lerg()
-                    lerg.npanxx = npanxx
-                    lerg.thousand = thousands
-                    lerg.lata = lata
-                    lerg.ocn = ocn
-                    lerg.rate_center = rate_center
-                    lerg.country = country
-                    lerg.state = state
-                    lerg.company = company
-                    lerg.clli = clli
-                    lerg.switch_name = switch_name
-                    lerg.switch_type = switch_type
-                    lerg.assign_date = assign_date
-                    lerg.prefix_type = prefix_type
-
-                    lerg.created_at = new Date().toISOString()
-                    lerg.updated_at = new Date().toISOString()
-
-                    await this.lergRepository.create(lerg)
-                    completed++
-                  }
-                }
-
-              })
-              .on('end', ()=> {
-                stream.resume()
-              })
-              .on('error', () => {
-                stream.resume()
-              })
+            stream.resume()
           }))
-          .on('end', async() => {
+          .on('close', async() => {
             history.status = JOB_STATUS.COMPLETED
             this.finish(history, completed, failed, message)
 
@@ -193,99 +112,116 @@ export class LergAutoImport extends CronJob {
       else if (history.status == JOB_STATUS.IMPORTING) {
       }
 
-      // console.log(history)
+      console.log(history)
       await DataUtils.sleep(5000)
     }
   }
 
-  private async import(history: LergHistory, dataset: any[]) {
-    let completed = 0, failed = 0
-    let message = ""
+  private async import(line: string) {
+    const csv = require('fast-csv')
 
-    for (let data of dataset) {
-      let npa = data.length>0 ? data[0] : ''
-      let nxx = data.length>1 ? data[1] : ''
-      let thousands = data.length>2 ? data[2] : ''
-      let state = data.length>3 ? data[3] : ''
-      let company = data.length>4 ? data[4] : ''
-      let ocn = data.length>5 ? data[5] : ''
-      let rate_center = data.length>6 ? data[6] : ''
-      let clli = data.length>7 ? data[7] : ''
-      let assign_date = data.length>8 ? data[8] : ''
-      let prefix_type = data.length>9 ? data[9] : ''
-      let switch_name = data.length>10 ? data[10] : ''
-      let switch_type = data.length>11 ? data[11] : ''
-      // let lata = worksheet.getCell('M'+index).value
-      // let company = worksheet.getCell('N'+index).value
-      let lata = data.length>14 ? data[14] : ""
-      let country = data.length>15 ? data[15] : ""
+    return new Promise(resolve => {
+      let completed = 0, failed = 0
+      let message = ""
 
-      if (npa==null || npa=="" || nxx==null || nxx=="") {
-        const err = "NpaNxx is a mandatory field."
-        if (!message.includes(err))
-          message += err + "\n"
-        failed++
-      } else {
-        let npanxx = npa + nxx
-        let lerg = await this.lergRepository.findOne({where: {npanxx: npanxx, thousand: thousands}})
-        if (lerg) {
-          lerg.lata = lata
-          lerg.ocn = ocn
-          if (rate_center!=null && rate_center!="")
-            lerg.rate_center = rate_center
-          if (country!=null && country!="")
-            lerg.country = country
-          if (state!=null && state!="")
-            lerg.state = state
-          if (company!=null && company!="")
-            lerg.company = company
-          if (thousands!=null && thousands!="")
-            lerg.thousand = thousands
-          if (clli!=null && clli!="")
-            lerg.clli = clli
+      csv.parseString(line, { delimiter: ",", headers: false })
+          .on('data', async (data: any) => {
+            let npa = data.length>0 ? data[0] : ''
+            let nxx = data.length>1 ? data[1] : ''
+            let thousands = data.length>2 ? data[2] : ''
+            let state = data.length>3 ? data[3] : ''
+            let company = data.length>4 ? data[4] : ''
+            let ocn = data.length>5 ? data[5] : ''
+            let rate_center = data.length>6 ? data[6] : ''
+            let clli = data.length>7 ? data[7] : ''
+            let assign_date = data.length>8 ? data[8] : ''
+            let prefix_type = data.length>9 ? data[9] : ''
+            let switch_name = data.length>10 ? data[10] : ''
+            let switch_type = data.length>11 ? data[11] : ''
+            // let lata = worksheet.getCell('M'+index).value
+            // let company = worksheet.getCell('N'+index).value
+            let lata = data.length>14 ? data[14] : ""
+            let country = data.length>15 ? data[15] : ""
 
-          if (switch_name!=null && switch_name!="")
-            lerg.switch_name = switch_name
-          if (switch_type!=null && switch_type!="")
-            lerg.switch_type = switch_type
+            if (npa==null || npa=="" || nxx==null || nxx=="") {
+              const err = "NpaNxx is a mandatory field."
+              if (!message.includes(err))
+                message += err + "\n"
+              failed++
+            } else {
+              let npanxx = npa + nxx
+              let lerg = await this.lergRepository.findOne({where: {npanxx: npanxx, thousand: thousands}})
+              if (lerg) {
+                lerg.lata = lata
+                lerg.ocn = ocn
+                if (rate_center!=null && rate_center!="")
+                  lerg.rate_center = rate_center
+                if (country!=null && country!="")
+                  lerg.country = country
+                if (state!=null && state!="")
+                  lerg.state = state
+                if (company!=null && company!="")
+                  lerg.company = company
+                if (thousands!=null && thousands!="")
+                  lerg.thousand = thousands
+                if (clli!=null && clli!="")
+                  lerg.clli = clli
 
-          if (assign_date!=null && assign_date!="")
-            lerg.assign_date = assign_date
-          if (prefix_type!=null && prefix_type!="")
-            lerg.prefix_type = prefix_type
+                if (switch_name!=null && switch_name!="")
+                  lerg.switch_name = switch_name
+                if (switch_type!=null && switch_type!="")
+                  lerg.switch_type = switch_type
 
-          lerg.updated_at = new Date().toISOString()
+                if (assign_date!=null && assign_date!="")
+                  lerg.assign_date = assign_date
+                if (prefix_type!=null && prefix_type!="")
+                  lerg.prefix_type = prefix_type
 
-          await this.lergRepository.save(lerg)
-          completed++
+                lerg.updated_at = new Date().toISOString()
 
-        }
-        else {
-          lerg = new Lerg()
-          lerg.npanxx = npanxx
-          lerg.thousand = thousands
-          lerg.lata = lata
-          lerg.ocn = ocn
-          lerg.rate_center = rate_center
-          lerg.country = country
-          lerg.state = state
-          lerg.company = company
-          lerg.clli = clli
-          lerg.switch_name = switch_name
-          lerg.switch_type = switch_type
-          lerg.assign_date = assign_date
-          lerg.prefix_type = prefix_type
+                await this.lergRepository.save(lerg)
+                completed++
 
-          lerg.created_at = new Date().toISOString()
-          lerg.updated_at = new Date().toISOString()
+              }
+              else {
+                lerg = new Lerg()
+                lerg.npanxx = npanxx
+                lerg.thousand = thousands
+                lerg.lata = lata
+                lerg.ocn = ocn
+                lerg.rate_center = rate_center
+                lerg.country = country
+                lerg.state = state
+                lerg.company = company
+                lerg.clli = clli
+                lerg.switch_name = switch_name
+                lerg.switch_type = switch_type
+                lerg.assign_date = assign_date
+                lerg.prefix_type = prefix_type
 
-          await this.lergRepository.create(lerg)
-          completed++
-        }
-      }
-    }
+                lerg.created_at = new Date().toISOString()
+                lerg.updated_at = new Date().toISOString()
 
-    this.finish(history, completed, failed, message)
+                await this.lergRepository.create(lerg)
+                completed++
+              }
+            }
+
+            resolve({completed, failed, message})
+          })
+          .on('end', ()=> {
+          })
+          .on('error', (err: any) => {
+            failed++
+            if (err!=null && err.message!=null) {
+              if (!message.includes(err.message))
+                message += err.message + "\n"
+            }
+
+            resolve({completed, failed, message})
+          })
+
+    })
   }
 
   private async finish(history: LergHistory, completed: number, failed:number, message: string) {
@@ -329,7 +265,7 @@ export class LergAutoImport extends CronJob {
 
     for (const item of files.children) {
       if (item.name.toLowerCase().includes("lerg_")) {
-        const history = await this.historyRepository.findOne({where: {and: [ {or: [{status: JOB_STATUS.SUCCESS}, {status: JOB_STATUS.COMPLETED}]}, {filename: item.name}]}})
+        const history = await this.historyRepository.findOne({where: {and: [ {or: [{status: JOB_STATUS.SUCCESS}, {status: JOB_STATUS.COMPLETED}, {status: JOB_STATUS.IMPORTING}]}, {filename: item.name}]}})
         if (!history)
           return item.name
       }

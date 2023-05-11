@@ -37,7 +37,7 @@ export class CdrAutoImport extends CronJob {
         // started already
         console.log(server.name + " is starting...")
 
-        await this.cdrService.create(server)
+        // await this.cdrService.create(server)
 
         const listResult = await this.ftpService.list(server)
         if (listResult.success==false) {

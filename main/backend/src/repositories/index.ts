@@ -16,4 +16,5 @@ export * from './cdr-server.repository';
 export * from './cdr-history.repository';
 export * from './lerg-history.repository';
 export * from './tfn-number.repository';
-export * from './lrn-number.repository';
+export * from './statement.repository';
+export * from './customer-product.repository';

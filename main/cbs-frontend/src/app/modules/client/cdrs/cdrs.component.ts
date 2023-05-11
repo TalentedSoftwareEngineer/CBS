@@ -41,7 +41,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
 
   cdrsImportForm: FormGroup = new FormGroup({
     name: new FormControl('', [Validators.required]),
-    table_name: new FormControl('', [Validators.required]),
+    // table_name: new FormControl('', [Validators.required]),
     address: new FormControl('', [Validators.required]),
     port: new FormControl('', [Validators.required]),
     username: new FormControl('', [Validators.required]),
@@ -168,9 +168,20 @@ export class CdrsComponent implements OnInit, AfterViewInit {
         .pipe(tap(async (response: any[]) => {
           this.import_cdrs = [];
           response.map(u => {
-            u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
-            u.start_date = u.start_date ? moment(new Date(u.start_date)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+            // u.start_date = u.start_date ? moment(new Date(u.start_date)).format('MM/DD/YYYY h:mm:ss A') : '';
+            if(Boolean(this.store.getUser()?.timezone)) {
+              // Timezone Time
+              u.created_at = u.created_at ? moment(u.created_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(u.updated_at).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.start_date = u.start_date ? moment(u.start_date).utc().utcOffset(Number(this.store.getUser()?.timezone)).format('MM/DD/YYYY h:mm:ss A') : '';
+            } else {
+              // Local time
+              u.created_at = u.created_at ? moment(new Date(u.created_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.updated_at = u.updated_at ? moment(new Date(u.updated_at)).format('MM/DD/YYYY h:mm:ss A') : '';
+              u.start_date = u.start_date ? moment(new Date(u.start_date)).format('MM/DD/YYYY h:mm:ss A') : '';
+            }
           });
 
           for (let item of response) {
@@ -200,11 +211,11 @@ export class CdrsComponent implements OnInit, AfterViewInit {
   openModal = (modal_title: string) => {
     this.modalTitle = modal_title
     this.flag_openDialog = true
-    if(modal_title.toLowerCase()=='edit') {
-      this.cdrsImportForm.controls['table_name'].disable();
-    } else {
-      this.cdrsImportForm.controls['table_name'].enable();
-    }
+    // if(modal_title.toLowerCase()=='edit') {
+    //   this.cdrsImportForm.controls['table_name'].disable();
+    // } else {
+    //   this.cdrsImportForm.controls['table_name'].enable();
+    // }
   }
 
   closeModal = () => {
@@ -231,7 +242,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
     }
 
     let name = this.cdrsImportForm.get('name')?.value;
-    let table_name = this.cdrsImportForm.get('table_name')?.value;
+    // let table_name = this.cdrsImportForm.get('table_name')?.value;
     let address = this.cdrsImportForm.get('address')?.value;
     let port = Number(this.cdrsImportForm.get('port')?.value);
     let username = this.cdrsImportForm.get('username')?.value;
@@ -259,7 +270,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
       path: path ? path : '',
     }
 
-    data.table_name = table_name ? table_name : '';
+    // data.table_name = table_name ? table_name : '';
 
     if(this.modalTitle.toLowerCase()=='add') {
       await this.api.createImportCDR(data).pipe(tap(res=>{
@@ -282,7 +293,7 @@ export class CdrsComponent implements OnInit, AfterViewInit {
     this.api.getImportCDR(id).subscribe(res => {
       this.cdrsImportForm.setValue({
         name: res.name,
-        table_name: res.table_name ? res.table_name : '',
+        // table_name: res.table_name ? res.table_name : '',
         address: res.address,
         port: res.port,
         username: res.username,

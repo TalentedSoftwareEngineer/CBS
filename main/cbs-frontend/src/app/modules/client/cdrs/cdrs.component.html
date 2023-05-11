@@ -117,12 +117,12 @@
                 <label for="name">Name</label>
               </span>
             </div>
-            <div class="md:col-6 col-12">
+            <!-- <div class="md:col-6 col-12">
               <span class="p-float-label">
                 <input type="text" class="form-control" id="table_name" formControlName="table_name" pInputText [(ngModel)]="inputTableName" class="{{isImportCDRsFormFieldValid('table_name') ? 'ng-invalid ng-dirty' : ''}}" pattern="^[\w\d\s_]{1,30}$">
                 <label for="table_name">Table Name</label>
               </span>
-            </div>
+            </div> -->
             <div class="md:col-6 col-12">
               <span class="p-float-label">
                 <input type="text" class="form-control" id="lnp_server" formControlName="lnp_server" pInputText [(ngModel)]="inputLnpServer" class="{{isImportCDRsFormFieldValid('lnp_server') ? 'ng-invalid ng-dirty' : ''}}">
@@ -148,7 +148,7 @@
                   id="start_date" 
                   formControlName="start_date"
                   [(ngModel)]="inputStartDate"
-                  dateFormat="mm/dd/yyyy"
+                  dateFormat="mm/dd/yy"
                   [showButtonBar]="true"
                 ></p-calendar>
                 <label for="start_date">Start Date</label>

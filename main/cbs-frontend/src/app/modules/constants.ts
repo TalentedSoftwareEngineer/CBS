@@ -6,6 +6,16 @@ export enum CBSUserType {
 
 export const PAGE_SIZE_OPTIONS = [25, 50, 100, 200, 500];
 
+export const TIMEZONE = [
+  {name: 'Auto Detect', value: ''},
+  {name: 'Coordinated Universal Time (UTC)', value: '0'},
+  {name: 'Pacific Standard Time (PST)', value: '-8'},
+  {name: 'Mountain Standard Time (MST)', value: '-7'},
+  {name: 'Central Standard Time (CST)', value: '-6'},
+  {name: 'Estern Standard Time (EST)', value: '-5'},
+  {name: 'Eastern Daylight Time (EDT)', value: '-4'}
+]
+
 export const SUPER_ADMIN_ID = 1
 export const SUPER_ADMIN_ROLE_ID = 1
 

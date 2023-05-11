@@ -651,7 +651,8 @@ export class UploadService {
                   if (!message.includes(err))
                     message += err + "\n"
                   failed+=1
-                } else {
+                }
+                else {
                   tfn = new TfnNumber()
                   tfn.tfn_num = tfn_num
                   tfn.customer_id = customer_id

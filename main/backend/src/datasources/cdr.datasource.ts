@@ -4,11 +4,11 @@ import {juggler} from '@loopback/repository';
 const config = {
   name: 'cdr',
   connector: 'mysql',
-  host: process.env.NODE_ENV=='production' ? 'localhost' : 'localhost',
-  port: process.env.NODE_ENV=='production' ? 3306 : 3306,
-  user: process.env.NODE_ENV=='production' ? 'root' : 'root',
-  password: process.env.NODE_ENV=='production' ? 'D1pv@o23!!' : '',
-  database: process.env.NODE_ENV=='production' ? 'cdr' : 'cdr',
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: process.env.NODE_ENV=='production' ? 'D1pv@o23!!' : (process.env.NODE_ENV=='development' ? 'D1pv@o23!!' : '') ,
+  database: 'cdr',
 };
 
 

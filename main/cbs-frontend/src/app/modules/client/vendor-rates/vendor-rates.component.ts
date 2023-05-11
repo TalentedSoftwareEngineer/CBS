@@ -55,11 +55,9 @@ export class VendorRatesComponent implements OnInit {
   }
 
   onRowSelect = (event: Event) => {
-    debugger;
   }
 
   onRowUnselect = (event: Event) => {
-    debugger;
   }
 
   onSortChange = async (name: any) => {

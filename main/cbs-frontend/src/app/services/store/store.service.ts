@@ -91,13 +91,14 @@ export class StoreService {
     return theme;
   }
 
-  public retrieveTokenId(): string {
+  public retrieveToken(): IUserToken {
     // @ts-ignore
     const userToken = JSON.parse(this.localdb.getItem(DBKEYS.TOKEN)) as IUserToken;
     if (userToken == null) {
-      return '';
+      // @ts-ignore
+      return null;
     }
-    return userToken.token;
+    return userToken;
   }
 
   public storeToken(token: IUserToken) {
@@ -124,6 +125,11 @@ export class StoreService {
 
   public storeUser(user: IUser) {
     this.store = { ...this.store, user };
+  }
+
+  public storeTimezone(timezone: any) {
+    this.store.user.timezone = timezone
+    this.store = { ...this.store};
   }
 
   public getUser() {

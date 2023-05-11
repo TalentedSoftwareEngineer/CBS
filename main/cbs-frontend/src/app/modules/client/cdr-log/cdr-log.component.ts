@@ -86,45 +86,58 @@ export class CdrLogComponent implements OnInit {
 
     // })
 
-    await new Promise<void>(async (resolve)=>{
-      await this.getCdrServer();
-      if(this.selectServer!='') {
-        resolve();
-      }
-    });
+    await this.getCdrServer();
     await this.getNaps();
     await this.getCDRLogsList();
-    await this.getTotalCDRLogsCount();
   }
 
   getCDRLogsList = async () => {
+    // if(this.serverOptions.length < 2)
+    // {
+    //   this.showWarn('No CDR Servers');
+    //   return;
+    // }
+
     this.isLoading = true;
     try {
       let filterValue = this.filterValue;
-      let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
-      let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
 
-      // console.log(this.selectedDate[0], new Date(this.selectedDate[0].toUTCString()));
+      // let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00:00').getTime() / 1000;
+      // let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59:59').getTime() / 1000;
+
+      let offset = new Date().getTimezoneOffset()
+      if(Boolean(this.store.getUser()?.timezone)) {
+        offset = Number(this.store.getUser()?.timezone) * -60
+      }
+
+      let localStart = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00:00.000Z');
+      let utcStart = (localStart.getTime() + offset*1000)/1000;
+
+      let localEnd = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59:59.000Z');
+      let utcEnd = (localEnd.getTime() + offset*1000)/1000;
 
       await this.api.getCDRLogsList(
-        this.sortActive, 
-        this.sortDirection, 
-        this.pageIndex, 
-        this.pageSize, 
-        filterValue, 
-        this.selectServer, 
-        start_at, 
-        end_at,
+        this.sortActive,
+        this.sortDirection,
+        this.pageIndex,
+        this.pageSize,
+        filterValue,
+        this.selectServer,
+        utcStart,
+        utcEnd,
         this.callCountRange?.operator,
         this.callCountRange?.call_count,
         this.durationRange?.operator,
         this.durationRange?.duration,
+        this.selectNap
         /*this.selectDirection*/
       ).pipe(tap(async (response: any[]) => {
         this.cdr_logs = [];
         response.map(u => {
-          u.StartTime = u.StartTime ? moment(new Date(Number(u.StartTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
-          u.EndTime = u.EndTime ? moment(new Date(Number(u.EndTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          // u.StartTime = u.StartTime ? moment.utc(Number(u.StartTime) * 1000).format('MM/DD/YYYY h:mm:ss A') : '';
+          // u.EndTime = u.EndTime ?  moment.utc(Number(u.EndTime) * 1000).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.StartTime = u.StartTime ? moment.utc(Number(u.StartTime) * 1000).utcOffset(-offset).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.EndTime = u.EndTime ?  moment.utc(Number(u.EndTime) * 1000).utcOffset(-offset).format('MM/DD/YYYY h:mm:ss A') : '';
           u.Duration = u.Duration ? (Math.floor(u.Duration / 60) + ':' + ((u.Duration % 60) > 9 ? (u.Duration % 60) : '0'+(u.Duration % 60))) : '';
         });
 
@@ -133,19 +146,19 @@ export class CdrLogComponent implements OnInit {
         }
       })).toPromise();
 
-      this.filterResultLength = -1;
+      // this.filterResultLength = -1;
       await this.api.getCDRLogsCount(
-        filterValue, 
-        this.selectServer, 
-        start_at, 
-        end_at,
+        filterValue,
+        this.selectServer,
+        utcStart,
+        utcEnd,
         this.callCountRange?.operator,
         this.callCountRange?.call_count,
         this.durationRange?.operator,
         this.durationRange?.duration,
-        /*this.selectDirection*/
+        this.selectNap
       ).pipe(tap( res => {
-        this.filterResultLength = res[0].total_count
+        this.filterResultLength = res.total_count
       })).toPromise();
     } catch (e) {
     } finally {
@@ -153,59 +166,54 @@ export class CdrLogComponent implements OnInit {
     }
   }
 
-  getTotalCDRLogsCount = async () => {
-    let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
-    let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
-    this.resultsLength = -1
-    await this.api.getCDRLogsCount('', this.selectServer, start_at, end_at, '', '', '', '')
-    .pipe(tap( res => {
-      this.resultsLength = res[0].total_count
-    })).toPromise();
-  }
-
   getCdrServer = async () => {
     this.serverOptions = [];
     await this.api.getCdrServerForFilter()
       .pipe(tap(async (response: any[]) => {
-        response.forEach(res_item=>{
-          let server = this.serverOptions.find(item=>item.name==res_item.table_name);
-          if(!server)
-            this.serverOptions.push({name: res_item.table_name, value: res_item.table_name});
-        });
+        // response.forEach(res_item=>{
+        //   let server = this.serverOptions.find(item=>item.name==res_item.table_name);
+        //   if(!server)
+        //     this.serverOptions.push({name: res_item.table_name, value: res_item.table_name});
+        // });
+        this.serverOptions = [{name: 'All', value: ''}, ...response.map(item=>({name: item.name, value: item.id}))];
         this.selectServer = this.serverOptions[0].value;
       })).toPromise();
   }
 
   getNaps = async () => {
     this.api.getNapsForFilter(this.selectServer).subscribe((res: any[])=>{
-      console.log(res);
       this.napOptions = [{name: 'All', value: ''}, ...res.map(item=>({name: item.name, value: item.name}))];
     });
   }
 
   cdrLogExport = async () => {
-    let start_at = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00').getTime() / 1000;
-    let end_at = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59').getTime() / 1000;
-    await this.api.getCDRLogsCount('', this.selectServer, start_at, end_at, '', '', '', '')
-    .pipe(tap( async (res) => {
-      await this.api.getCDRLogsList(
-        this.sortActive, 
-        this.sortDirection, 
-        this.pageIndex, 
-        res.count, 
-        this.filterValue, 
-        this.selectServer, 
-        start_at, 
-        end_at,
+    let offset = new Date().getTimezoneOffset()
+    if(Boolean(this.store.getUser()?.timezone)) {
+      offset = Number(this.store.getUser()?.timezone) * -60
+    }
+
+    let localStart = new Date(moment(this.selectedDate[0]).format('YYYY-MM-DD') + ' 00:00:00.000Z');
+    let utcStart = (localStart.getTime() + offset*1000)/1000;
+
+    let localEnd = new Date(moment(this.selectedDate[1] ? this.selectedDate[1] : this.selectedDate[0]).format('YYYY-MM-DD') + ' 23:59:59.000Z');
+    let utcEnd = (localEnd.getTime() + offset*1000)/1000;
+
+      await this.api.exportCDRLogsList(
+        this.sortActive,
+        this.sortDirection,
+        this.filterValue,
+        this.selectServer,
+        utcStart,
+        utcEnd,
         this.callCountRange?.operator,
         this.callCountRange?.call_count,
         this.durationRange?.operator,
         this.durationRange?.duration,
-        /*this.selectDirection*/
+        this.selectNap
       ).pipe(tap(async (response: any[]) => {
         response.map(u => {
-          u.StartTime = u.StartTime ? moment(new Date(Number(u.StartTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
-          u.EndTime = u.EndTime ? moment(new Date(Number(u.EndTime) * 1000)).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.StartTime = u.StartTime ? moment.utc(Number(u.StartTime) * 1000).utcOffset(-offset).format('MM/DD/YYYY h:mm:ss A') : '';
+          u.EndTime = u.EndTime ?  moment.utc(Number(u.EndTime) * 1000).utcOffset(-offset).format('MM/DD/YYYY h:mm:ss A') : '';
           u.Duration = u.Duration ? (Math.floor(u.Duration / 60) + ':' + ((u.Duration % 60) > 9 ? (u.Duration % 60) : '0'+(u.Duration % 60))) : '';
         });
 
@@ -213,35 +221,33 @@ export class CdrLogComponent implements OnInit {
         response.forEach((item, index) => {
           cdrLogsContent += `\n${item.StartTime}, ${item.EndTime}, ${item.Calling==null?'':item.Calling}, ${item.Called==null?'':item.Called}, ${item.calls==null?'':item.calls}, ${item.Duration==null?'':item.Duration}, ${item.NAP_Originate==null?'':item.NAP_Originate}, ${item.NAP_Answer==null?'':item.NAP_Answer}`;
         });
-    
+
         let data = `Start Time,End Time,Calling,Called,Calls,Duration,NAP Originate,NAP Answer${cdrLogsContent}`
-    
+
         const csvContent = 'data:text/csv;charset=utf-8,' + data;
         const url = encodeURI(csvContent);
         let fileName = 'CDR_Logs'+moment(new Date()).format('YYYY_MM_DD_hh_mm_ss');
-    
+
         const tempLink = document.createElement('a');
         tempLink.href = url;
         tempLink.setAttribute('download', fileName);
         tempLink.click();
       })).toPromise();
-    })).toPromise();
-  } 
+  }
 
   setFilterDurationRage = (event: any) => {
-    this.durationRange = event;  
+    this.durationRange = event;
   }
 
   setFilterCallCountRage = (event: any) => {
-    this.callCountRange = event;  
+    this.callCountRange = event;
   }
 
   onSelectDateRangePicker = (event: any) => {
     if(this.selectedDate[0] != null && this.selectedDate[1] != null) {
-      debugger;
       if(moment(this.selectedDate[0]).format('YYYY-MM-DD') == moment(this.selectedDate[1]).format('YYYY-MM-DD'))
         this.selectedDate = [this.selectedDate[0], null];
-        
+
       this.calendar.hideOverlay()
     }
   }

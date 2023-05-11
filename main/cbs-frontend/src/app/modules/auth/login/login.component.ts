@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit, AfterViewInit  {
               private router: Router,
               private api: ApiService,
               private store: StoreService,
-              public layoutService: LayoutService, 
+              public layoutService: LayoutService,
               private messageService: MessageService) { }
 
   ngOnInit(): void {
@@ -80,12 +80,11 @@ export class LoginComponent implements OnInit, AfterViewInit  {
       this.blockContent = false
 
       if (res) {
-        await new Promise<void>(resolve=>{
-          this.api.retrieveLoggedUserOb(this.store.getToken()).subscribe(res=>{
-            resolve();
-          });
-        });
-
+        // await new Promise<void>(resolve=>{
+        //   this.api.retrieveLoggedUserOb(this.store.getToken()).subscribe(res=>{
+        //     resolve();
+        //   });
+        // });
         this.store.storePassword(this.f.password.value);
         await this.router.navigate([ROUTES.dashboard.system_overview]);
       }

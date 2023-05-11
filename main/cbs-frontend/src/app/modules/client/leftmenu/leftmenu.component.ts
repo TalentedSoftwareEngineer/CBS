@@ -5,6 +5,7 @@ import {ApiService} from "../../../services/api/api.service";
 import {LayoutService} from "../../../services/layout/layout.service";
 import { ROUTES } from "../../../app.routes";
 import { PERMISSIONS } from 'src/app/consts/permissions';
+import {USER_TYPE} from "../../../consts/types";
 
 @Component({
   selector: 'app-leftmenu',
@@ -54,11 +55,11 @@ export class LeftmenuComponent implements OnInit {
           hidden: false,
           icon: 'pi pi-fw pi-users',
           items: [
-            { hidden: false, label: 'Account Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.account },
+            { hidden: false, label: 'Account Management', icon: 'pi pi-fw pi-angle-double-right', link: state.user?.type==USER_TYPE.USER ? ROUTES.administration.account : ROUTES.administration.customer_account },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LOGO_MANAGEMENT), label: 'Logo Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.logo },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_BANNER_MANAGEMENT), label: 'Banner Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.banner },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LERG_MANAGEMENT), label: 'Lerg Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.lerg },
-            { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LRN_MANAGEMENT), label: 'LRN Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.lrn },
+            // { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_LRN_MANAGEMENT), label: 'LRN Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.administration.lrn },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_CDRS_IMPORT), label: 'CDR Server Management ', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdrs_import },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.CDR_IMPORT_HISTORY), label: 'CDR Import History', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdr_import_history },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.CDR_LOG), label: 'CDR Log', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.reports.cdr_log },
@@ -94,7 +95,29 @@ export class LeftmenuComponent implements OnInit {
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_TFN_NUMBERS), label: 'TFN Number Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.number_mng.tfn_number },
             { hidden: !state.user?.permissions?.includes(PERMISSIONS.READ_DID_NUMBERS), label: 'DID Number Management', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.number_mng.did_number },
           ]
-        }
+        },
+        {
+          label: 'Billing',
+          hidden: !state.user?.permissions?.includes(PERMISSIONS.AUTO_GENERATE_STATEMENT) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.CREATE_BILLING_STATEMENT) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.VIEW_BILLING_STATEMENT) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.TAX_MANAGEMENT) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.RERATE_CALLS) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.AUTO_GENERATE_INVOICE) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.CUSTOMER_PAYMENT) &&
+                  !state.user?.permissions?.includes(PERMISSIONS.STATEMENT_ACCOUNT),
+          icon: 'pi pi-fw pi-users',
+          items: [
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.AUTO_GENERATE_STATEMENT), label: 'Auto Generate Statement', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.auto_generate_statement },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.CREATE_BILLING_STATEMENT), label: 'Create Billing Statement', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.create_billing_statement },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.VIEW_BILLING_STATEMENT), label: 'View Billing Statement', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.view_billing_statement },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.TAX_MANAGEMENT), label: 'Tax Management ', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.tax_management },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.RERATE_CALLS), label: 'Rerate Calls', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.rerate_calls },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.AUTO_GENERATE_INVOICE), label: 'Auto Generate Invoice', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.auto_generate_invoice },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.CUSTOMER_PAYMENT), label: 'Customer Payment', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.customer_payment },
+            { hidden: !state.user?.permissions?.includes(PERMISSIONS.STATEMENT_ACCOUNT), label: 'Statement Account', icon: 'pi pi-fw pi-angle-double-right', link: ROUTES.billing.statement_account },
+          ]
+        },
       ];
     });
   }

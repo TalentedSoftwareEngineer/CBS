@@ -15,4 +15,4 @@ export * from './cdr-server.controller';
 export * from './cdr-history.controller';
 export * from './cdr-log.controller';
 export * from './tfn-number.controller';
-export * from './lrn-number.controller';
+export * from './billing.controller';

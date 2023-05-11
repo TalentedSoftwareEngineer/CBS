@@ -8,6 +8,7 @@ export const ROUTES = {
   },
   administration: {
     account: 'account',
+    customer_account: 'customer-account',
     logo: 'logo',
     banner: 'banner',
     lerg: 'lerg',
@@ -35,5 +36,15 @@ export const ROUTES = {
     cdrs_import: 'cdrs_import',
     cdr_import_history: 'cdr_import_history',
     cdr_log: 'cdr_log',
+  },
+  billing: {
+    auto_generate_statement: 'auto_generate_statement',
+    create_billing_statement: 'create_billing_statement',
+    view_billing_statement: 'view_billing_statement',
+    tax_management: 'tax_management',
+    rerate_calls: 'rerate_calls',
+    auto_generate_invoice: 'auto_generate_invoice',
+    customer_payment: 'customer_payment',
+    statement_account: 'statement_account'
   }
 }

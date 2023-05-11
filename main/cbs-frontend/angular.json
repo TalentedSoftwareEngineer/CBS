@@ -46,7 +46,10 @@
             ],
             "allowedCommonJsDependencies": [
               "date-fns-tz",
-              "date-fns"
+              "date-fns",
+              "jspdf",
+              "raf",
+              "core-js"
             ]
           },
           "configurations": {

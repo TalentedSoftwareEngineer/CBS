@@ -75,7 +75,11 @@ export class AuthenticateController {
 
       return {token: token, user_id: user.id!};
     } else {
-      throw new HttpErrors.Unauthorized('Please contact support center.');
+      const credentials = await this.userService.getCustomerCredentialsForSecurity(user.user);
+      const profile = this.userService.convertToUserProfile(credentials);
+      const token = await this.jwtService.generateToken(profile);
+
+      return {token: token, user_id: user.id!};
     }
   }
 
@@ -113,7 +117,12 @@ export class AuthenticateController {
   })
   async user(@inject(SecurityBindings.USER) currentUserProfile: UserProfile): Promise<any> {
     const profile = JSON.parse(currentUserProfile[securityId]);
-    const credentials = await this.userService.getUserCredentials(profile.user.id);
+    let credentials;
+    if (profile.type==USER_TYPE.USER)
+      credentials = await this.userService.getUserCredentials(profile.user.id);
+    else
+      credentials = await this.userService.getCustomerCredentials(profile.user.id);
+
     return credentials;
   }
 }

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpRequest, HttpHandler, HttpInterceptor, HttpEvent, HttpResponse, HttpErrorResponse} from '@angular/common/http';
-import {Observable, of} from 'rxjs';
+import {Observable, of, throwError} from 'rxjs';
 import {tap, pluck, catchError, take} from 'rxjs/operators';
 import {ApiService} from '../api/api.service';
 import {Router} from '@angular/router';
@@ -55,9 +55,22 @@ export class StatusInterceptor implements HttpInterceptor {
             }
           });
         } else if (error.status === 403) {
-          window.localStorage.clear();
-          this.router.navigate(['/']);
+          this.api.retrieveLoggedUserOb(this.store.retrieveToken()).subscribe((user) => {
+            if (user) {
+
+            } else {
+              window.localStorage.clear();
+              this.router.navigate(['/']);
+            }
+          }, error => {
+            window.localStorage.clear();
+            this.router.navigate(['/']);
+          }, () => {
+          })
+        } else {
+          return throwError(error.message);
         }
+
         return of(request);
       })
     );

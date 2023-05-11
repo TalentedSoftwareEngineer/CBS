@@ -1,0 +1,400 @@
+<h4 class="page_title">Create Billing Statement</h4>
+<p-blockUI [blocked]="isProcessing">
+  <p-progressSpinner></p-progressSpinner>
+</p-blockUI>
+
+<div class="card">
+    <div class="grid">
+        <div class="md:col-9 col-12">
+            <div class="grid">
+                <div class="md:col-4 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-dropdown
+                            [options]="customerOptions"
+                            [(ngModel)]="selectCustomer"
+                            optionLabel="name"
+                            optionValue="value"
+                            [filter]="true"
+                            filterBy="name"
+                            scrollHeight="150px"
+                        ></p-dropdown>
+                        <label>Customer</label>
+                    </span>
+                </div>
+                <div class="md:col-4 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-dropdown
+                            [options]="serverOptions"
+                            [(ngModel)]="selectServer"
+                            optionLabel="name"
+                            optionValue="value"
+                            [filter]="true"
+                            filterBy="name"
+                            scrollHeight="150px"
+                        ></p-dropdown>
+                        <label>Server</label>
+                    </span>
+                </div>
+                <div class="md:col-4 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-calendar
+                            #calendar
+                            selectionMode="range"
+                            [readonlyInput]="true"
+                            [(ngModel)]="selectedDate"
+                            dateFormat="mm/dd/yy"
+                            [showIcon]="true"
+                            [numberOfMonths]="2"
+                            styleClass="date_range"
+                            panelStyleClass="date_range_panel"
+                            (onSelect)="onSelectDateRangePicker($event)"
+                        >
+                            <ng-template pTemplate="header">
+                                <div class="calendar-header pt-3 pr-5 pl-2">
+                                <button pButton pRipple type="button" (click)="onClickToday()" label="Today" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickYesterday()" label="Yesterday" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickThisWeek()" label="This Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickLastWeek()" label="Last Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickThisMonth()" label="This Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickLastMonth()" label="Last Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                </div>
+                            </ng-template>
+                        </p-calendar>
+                        <label>Date Range</label>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 flex justify-content-end">
+            <span class="p-buttonset">
+                <button type="button" pButton pRipple label="View" icon="pi pi-eye" [disabled]="isLoading" (click)="onView()"></button>
+                <button type="button" class="p-button-danger" pButton pRipple label="Generate" [disabled]="isLoading" icon="pi pi-file-pdf" (click)="onGenerate()"></button>
+            </span>
+        </div>
+    </div>
+</div>
+
+<p-panel header="Total Statistics" styleClass="mb-4 pt-2" [toggleable]="true" [collapsed]="false" expandIcon="pi pi-chevron-up" collapseIcon="pi pi-chevron-down">
+    <div class="grid">
+        <div class="col-12 field" style="margin-bottom: 0">
+        <table class="p-component-full">
+            <thead>
+                <tr>
+                    <th class="text-align-center">Total Calls</th>
+                    <th class="text-align-center">Total Minutes</th>
+                    <th class="text-align-center">Avg. Minutes</th>
+                    <th class="text-align-center">Total Cost</th>
+                    <th class="text-align-center">Avg. Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-align-center">{{totalStatistics.total_calls | number: '0.0-10'}}</td>
+                    <td class="text-align-center">{{totalStatistics.total_minutes}}</td>
+                    <td class="text-align-center">{{totalStatistics.avg_minutes}}</td>
+                    <td class="text-align-center"><span *ngIf="totalStatistics.total_cost!=''">$</span>{{totalStatistics.total_cost}}</td>
+                    <td class="text-align-center"><span *ngIf="totalStatistics.avg_cost!=''">$</span>{{totalStatistics.avg_cost}}</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</p-panel>
+
+<p-panel header="Traffic Summary by Day" styleClass="mb-4 pt-2" [toggleable]="true" [collapsed]="false" expandIcon="pi pi-chevron-up" collapseIcon="pi pi-chevron-down">
+    <ng-template pTemplate="icons">
+        <button pButton type="button" label="Download" icon="pi pi-download" class="p-button-text" (click)="onDailyTrafficSummariesDownload()"></button>
+    </ng-template>
+
+    <p-table
+        [value]="dailyTrafficSummaries"
+        dataKey="id"
+        [rows]="50"
+        [rowsPerPageOptions]="rowsPerPageOptions"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+        responsiveLayout="stack"
+        [responsive]="true"
+        [paginator]="true"
+        [filterDelay]="0"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="date" class="text-align-center">
+                    <div>
+                        Date
+                        <p-sortIcon field="date"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="calls" class="text-align-center">
+                    <div>
+                        Calls
+                        <p-sortIcon field="calls"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="duration" class="text-align-center">
+                    <div>
+                        Duration
+                        <p-sortIcon field="duration"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="cost" class="text-align-center">
+                    <div>
+                        Cost
+                        <p-sortIcon field="cost"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="avg_dur" class="text-align-center">
+                    <div>
+                        Avg Dur
+                        <p-sortIcon field="avg_dur"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="avg_cost" class="text-align-center">
+                    <div>
+                        Avg Cost
+                        <p-sortIcon field="avg_cost"></p-sortIcon>
+                    </div>
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+            <tr>
+                <td class="text-align-center">
+                    <span class="p-column-title">Date</span>
+                    {{ item.date}}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Calls</span>
+                    {{ item.calls }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Minutes</span>
+                    {{ item.minutes }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Cost</span>
+                    ${{ item.cost }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Avg Dur</span>
+                    {{ item.avg_mins }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Avg Cost</span>
+                    ${{ item.avg_cost }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-panel>
+
+<p-panel header="Traffic Summary by Toll Free Number" styleClass="mb-4 pt-2" [toggleable]="true" [collapsed]="false" expandIcon="pi pi-chevron-up" collapseIcon="pi pi-chevron-down">
+    <ng-template pTemplate="icons">
+        <button pButton type="button" label="Download" icon="pi pi-download" class="p-button-text" (click)="onNumberTrafficSummariesDownload()"></button>
+    </ng-template>
+
+    <p-table
+        [value]="numberTrafficSummaries"
+        dataKey="id"
+        [rows]="100"
+        [rowsPerPageOptions]="rowsPerPageOptions"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+        responsiveLayout="stack"
+        [responsive]="true"
+        [paginator]="true"
+        [filterDelay]="0"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="num" class="text-align-center">
+                    <div>
+                        Tollfree Number
+                        <p-sortIcon field="num"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="calls" class="text-align-center">
+                    <div>
+                        Calls
+                        <p-sortIcon field="calls"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="duration" class="text-align-center">
+                    <div>
+                      Duration
+                        <p-sortIcon field="duration"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="cost" class="text-align-center">
+                    <div>
+                        Cost
+                        <p-sortIcon field="cost"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="avg_dur" class="text-align-center">
+                    <div>
+                        Avg Dur
+                        <p-sortIcon field="avg_dur"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="avg_cost" class="text-align-center">
+                    <div>
+                        Avg Cost
+                        <p-sortIcon field="avg_cost"></p-sortIcon>
+                    </div>
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+            <tr>
+                <td class="text-align-center">
+                    <span class="p-column-title">Tollfree Number</span>
+                    {{ item.num | phoneFormat}}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Calls</span>
+                    {{ item.calls }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Minutes</span>
+                    {{ item.minutes }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Cost</span>
+                    ${{ item.cost }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Avg Dur</span>
+                    {{ item.avg_mins }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Avg Cost</span>
+                    ${{ item.avg_cost }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-panel>
+
+<p-panel header="Call Details" styleClass="mb-4 pt-2" [toggleable]="true" [collapsed]="false" expandIcon="pi pi-chevron-up" collapseIcon="pi pi-chevron-down">
+    <ng-template pTemplate="icons">
+        <button pButton type="button" label="Download" icon="pi pi-download" class="p-button-text" (click)="onCdrDetailsDownload()"></button>
+    </ng-template>
+
+    <p-table
+        [value]="cdrDetails"
+        dataKey="id"
+        [rows]="100"
+        [rowsPerPageOptions]="rowsPerPageOptions"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+        responsiveLayout="stack"
+        [responsive]="true"
+        [paginator]="true"
+        [filterDelay]="0"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="StartTime" class="text-align-center">
+                    <div>
+                        Start Time
+                        <p-sortIcon field="StartTime"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="EndTime" class="text-align-center">
+                    <div>
+                        End Time
+                        <p-sortIcon field="EndTime"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="Calling" class="text-align-center">
+                    <div>
+                        Calling
+                        <p-sortIcon field="Calling"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="Called" class="text-align-center">
+                    <div>
+                        Called
+                        <p-sortIcon field="Called"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="Duration" class="text-align-center">
+                    <div>
+                        Duration
+                        <p-sortIcon field="Duration"></p-sortIcon>
+                    </div>
+                </th>
+                <th pSortableColumn="Duration" class="text-align-center">
+                  <div>
+                    Inter/Intra Rate
+                    <p-sortIcon field="inter_rate"></p-sortIcon>
+                  </div>
+                </th>
+                <th pSortableColumn="Init/Succ Duration" class="text-align-center">
+                  <div>
+                    Init/Succ Duration
+                    <p-sortIcon field="init_duration"></p-sortIcon>
+                  </div>
+                </th>
+                <th pSortableColumn="Cost" class="text-align-center">
+                    <div>
+                        Cost
+                        <p-sortIcon field="Cost"></p-sortIcon>
+                    </div>
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-importCDR_item>
+            <tr>
+                <td class="text-align-center">
+                    <span class="p-column-title">Start Time</span>
+                    {{ importCDR_item.StartTime}}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">End Time</span>
+                    {{ importCDR_item.EndTime }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Calling</span>
+                    {{ importCDR_item.Calling | phoneFormat}}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Called</span>
+                    {{ importCDR_item.Called | phoneFormat }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Duration</span>
+                    {{ importCDR_item.Duration }}
+                </td>
+                <td class="text-align-center">
+                  <span class="p-column-title">Inter/Intra Rate</span>
+                  ${{ importCDR_item.inter_rate }} / ${{ importCDR_item.intra_rate }}
+                </td>
+                <td class="text-align-center">
+                  <span class="p-column-title">Init/Succ Duration</span>
+                  {{ importCDR_item.init_duration }} / {{ importCDR_item.succ_duration }}
+                </td>
+                <td class="text-align-center">
+                    <span class="p-column-title">Cost</span>
+                    ${{ importCDR_item.cost }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-panel>
+
+<p-dialog header="Preview Billing Statement" styleClass="pdf-modal" [(visible)]="flag_generateDialog" (onHide)="closeGenerateDialog()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '615px'}" [modal]="true" [draggable]="false" [resizable]="false">
+    <div class="grid">
+      <div class="col-12" #statementContent>
+
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <span class="p-buttonset">
+          <button pButton pRipple label="Generate" (click)="generateStatement()" icon="pi pi-file-pdf" class="p-button-danger"></button>
+        </span>
+    </ng-template>
+</p-dialog>

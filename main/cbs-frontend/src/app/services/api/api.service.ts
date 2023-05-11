@@ -33,11 +33,10 @@ export class ApiService {
   }
 
   public retrieveLoggedUserOb(token: IUserToken): Observable<IUser> {
-    return this.getCurrentUser().pipe(tap(user => {
-      // @ts-ignore
+    return this.getCurrentUser().pipe(tap((user: any) => {
       const u = user.user;
-      u.uiSettings = "{}";
       u.permissions = user.permissions;
+      u.type = user.type
       this.store.storeUser(u);
     }));
   }
@@ -140,6 +139,11 @@ export class ApiService {
     return this.http.get<any[]>(url);
   }
 
+  getAllCustomerListForFilter(): Observable<any[]> {
+    const url = `${this.coreApi}/customers/for_filter_all`;
+    return this.http.get<any[]>(url);
+  }
+
   createCustomer(data: any): Observable<any> {
     return this.http.post<any>(`${this.coreApi}/customers`, data);
   }
@@ -165,12 +169,20 @@ export class ApiService {
     return this.http.patch<any>(`${this.coreApi}/customers/${id}/password`, data);
   }
 
+  updateCustomerAccountPassword(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/customers/${id}/account_password`, data);
+  }
+
   updateBilling(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/customers/${id}/billing`, data);
   }
 
   updateAdditional(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/customers/${id}/additional`, data);
+  }
+
+  updateProduct(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/customers/${id}/product`, data);
   }
 
   deleteCustomerById(id: number): Observable<any> {
@@ -233,6 +245,14 @@ export class ApiService {
 
   updateUserUISettings(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/users/${id}/ui_settings`, data);
+  }
+
+  updateCustomerUISettings(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/customers/${id}/ui_settings`, data);
+  }
+
+  updateVendorUISettings(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/vendors/${id}/ui_settings`, data);
   }
 
   updateUserStatus(id: number): Observable<any> {
@@ -450,6 +470,10 @@ export class ApiService {
     return this.http.patch<any>(`${this.coreApi}/vendors/${id}/password`, data);
   }
 
+  updateVendorAccountPassword(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.coreApi}/vendors/${id}/account_password`, data);
+  }
+
   updateVendorBilling(id: number, data: any): Observable<any> {
     return this.http.patch<any>(`${this.coreApi}/vendors/${id}/billing`, data);
   }
@@ -650,6 +674,7 @@ export class ApiService {
     calls: string,
     duration_op: string,
     duration: string,
+    nap: string
     /*cdr_direction: string*/
   ): Observable<any[]> {
     const parametersQuery = new URLSearchParams({
@@ -657,19 +682,20 @@ export class ApiService {
       skip: `${(page - 1) * size}`,
       order: `${active} ${direction}`,
       value: `${filterValue}`,
-      table: `${filterTable}`,
+      server: `${filterTable}`,
       start_at: `${start_at}`,
       end_at: `${end_at}`,
       calls_op: `${calls_op}`,
       calls: `${calls}`,
       duration_op: `${duration_op}`,
       duration: `${duration}`,
+      nap: `${nap}`,
       // direction: `${cdr_direction}`,
     }).toString();
     const url = `${this.coreApi}/cdr-logs?${parametersQuery}`;
     return this.http.get<any[]>(url);
   }
-  
+
   getCDRLogsCount(
     filterValue: string,
     filterTable: string,
@@ -679,27 +705,60 @@ export class ApiService {
     calls: string,
     duration_op: string,
     duration: string,
+    nap: string
     /* cdr_direction: string*/
   ): Observable<any> {
     const parametersQuery = new URLSearchParams({
       value: `${filterValue}`,
-      table: `${filterTable}`,
+      server: `${filterTable}`,
       start_at: `${start_at}`,
       end_at: `${end_at}`,
       calls_op: `${calls_op}`,
       calls: `${calls}`,
       duration_op: `${duration_op}`,
       duration: `${duration}`,
+      nap: `${nap}`,
       // direction: `${cdr_direction}`,
     }).toString();
     return this.http.get<any>(`${this.coreApi}/cdr-logs/count?${parametersQuery}`);
   }
 
-  getNapsForFilter(filterTable: string): Observable<any> {
+  exportCDRLogsList(
+    active: string,
+    direction: string,
+    filterValue: string,
+    filterTable: string,
+    start_at: number,
+    end_at: number,
+    calls_op: string,
+    calls: string,
+    duration_op: string,
+    duration: string,
+    nap: string
+    /*cdr_direction: string*/
+  ): Observable<any[]> {
     const parametersQuery = new URLSearchParams({
-      table: `${filterTable}`
+      order: `${active} ${direction}`,
+      value: `${filterValue}`,
+      server: `${filterTable}`,
+      start_at: `${start_at}`,
+      end_at: `${end_at}`,
+      calls_op: `${calls_op}`,
+      calls: `${calls}`,
+      duration_op: `${duration_op}`,
+      duration: `${duration}`,
+      nap: `${nap}`,
+      // direction: `${cdr_direction}`,
     }).toString();
-    return this.http.get<any>(`${this.coreApi}/cdr-logs/nap?${parametersQuery}`);
+    const url = `${this.coreApi}/cdr-logs?${parametersQuery}`;
+    return this.http.post<any[]>(url, {});
+  }
+
+  getNapsForFilter(filterTable: string): Observable<any> {
+    // const parametersQuery = new URLSearchParams({
+    //   table: `${filterTable}`
+    // }).toString();
+    return this.http.get<any>(`${this.coreApi}/cdr-logs/nap`);
   }
 
   //TFN Numbers
@@ -805,5 +864,26 @@ export class ApiService {
   //   const url = `${this.coreApi}/lrn-numbers/upload`;
   //   return this.http.post<any>(url, data);
   // }
+
+  //Auto Generate Statement
+  billingAutoStatement(data: any): Observable<any> {
+    return this.http.post<any>(`${this.coreApi}/statement/auto`, data);
+  }
+
+  calculateRateDeck(
+    customer_id: string,
+    server_id: string,
+    start_at: number,
+    end_at: number,
+  ): Observable<any> {
+    const parametersQuery = new URLSearchParams({
+      customer_id: `${customer_id}`,
+      server_id: `${server_id}`,
+      start_at: `${start_at}`,
+      end_at: `${end_at}`,
+    }).toString();
+    const url = `${this.coreApi}/billing/rate_deck?${parametersQuery}`;
+    return this.http.get<any>(url);
+  }
 
 }

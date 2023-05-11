@@ -8,7 +8,7 @@ import {
   CdrServerRepository,
   ConfigurationRepository,
   LergHistoryRepository,
-  LergRepository, LrnNumberRepository,
+  LergRepository,
 } from '../repositories';
 import {
   post,
@@ -24,19 +24,30 @@ import {
 import {repository} from '@loopback/repository';
 import {CONFIGURATIONS, JOB_STATUS} from '../constants/configurations';
 import {service} from '@loopback/core';
-import {CdrService, FtpService, RoleService} from '../services';
+import {BillingService, CdrService, FtpService, RoleService} from '../services';
 import DataUtils from '../utils/data';
 import * as fs from "fs";
-import {Lerg, LergHistory, LrnNumber} from '../models';
+import {Lerg, LergHistory} from '../models';
 import shellExec from 'shell-exec';
-import {LRN_DOWNLOADED_PATH, LRN_SHELL_NAME, LRN_SHELL_PATH, SCP_PASS, SCP_PATH, SCP_SERVER, SCP_USER} from '../config';
+import {
+  LRN_DOWNLOADED_HOME,
+  LRN_DOWNLOADED_PATH,
+  LRN_SHELL_NAME,
+  LRN_SHELL_PATH,
+  SCP_PASS,
+  SCP_PATH,
+  SCP_SERVER,
+  SCP_USER
+} from '../config';
 import directoryTree from 'directory-tree';
 
 export class HomeController {
   constructor(
     @repository(ConfigurationRepository) public configurationRepository : ConfigurationRepository,
     @repository(LergRepository) public lergRepository : LergRepository,
-    @repository(LrnNumberRepository) public lrnNumberRepository : LrnNumberRepository,
+    @repository(LergHistoryRepository) public historyRepository : LergHistoryRepository,
+    @service(CdrService) public cdrService : CdrService,
+    @service(BillingService) public billingService : BillingService,
   ) {}
 
   @get('/configurations/initSettings', {
@@ -81,84 +92,59 @@ export class HomeController {
     }
   })
   async test(
-    @param.query.number('days') days: number,
   ) {
-    this.process(days)
+    while (true) {
+      // 1682866800, 1680274800
+      const cdrs: any = await this.cdrService.execute(" select * from cdr_log where StartTime>1680274800 and LRN is null limit 100")
+      if (cdrs==null || cdrs.length==0)
+        return { success: true }
+
+      for (let item of cdrs) {
+        let did = item.Calling
+        const num = item.Calling.replace(/-/g, '')
+        if (num.length>0 && num.substring(0,1)=="+") {
+          if (num.length==12 && num.substring(1,2)=="1")
+            did = num.substring(2)
+        } else if (num.length==10) {
+        } else if (num.length==11 && num.substring(0,1)=="1")
+          did = num.substring(1)
+
+        const LRN = await this.cdrService.getLRN(did)
+        if (LRN!="") {
+          await this.cdrService.execute("update cdr_log set LRN='"+LRN+"' where `id`='"+item.id+"' ")
+        }
+      }
+
+      console.log("Processing....")
+      await DataUtils.sleep(3000)
+
+      if (cdrs.length<100)
+        return { success: true, message: 'less than 100' }
+    }
   }
 
-  public async process(days: number) {
-    console.log("Start LRN Updating-----", new Date().toISOString())
 
-    const result = await shellExec("cd " + LRN_SHELL_PATH + " && ./" + LRN_SHELL_NAME + " " + days)
-    if (result.stderr!="") {
-      // failed to download
-      console.log("No New LRN File", result)
-      return
-    }
-
-    let stdout = result.stdout // "lrn23-04-2023.tar.gz\n\nlrn23-04-2023.txt\n" //
-    let files: string[] = stdout.split("\n")
-    let gz = "", txt = ""
-    for (let file of files) {
-      if (file.endsWith(".tar.gz"))
-        gz = file
-      else if (file.endsWith(".txt"))
-        txt = file
-    }
-
-    txt = LRN_DOWNLOADED_PATH + "/" + txt
-    console.log("LRN File: ", txt)
-
-    try {
-      const fs = require('fs');
-      const es = require('event-stream')
-      const stream = fs.createReadStream(txt)
-        .pipe(es.split())
-        .pipe(es.mapSync(async (line: string) => {
-          stream.pause()
-
-          // console.log("line: " + line)
-          const lines = line.split(",")
-          const calling = lines.length>0 ? lines[0] : ''
-          const translated = lines.length>1 ? lines[1] : ''
-          const lata = lines.length>2 ? lines[2] : ''
-          const thousand = lines.length>3 ? lines[3] : ''
-
-          if (calling!="" && translated!="") {
-            this.update({calling, translated, lata, thousand})
+  @post('/test_statement', {
+    description: 'test',
+    responses: {
+      '200': {
+        description: 'NSRRequest ID',
+        content: {
+          'application/json': {
+            schema: {
+              type: "object",
+              properties: {
+                req_id: {
+                  type: "string"
+                }
+              }
+            }
           }
-
-          stream.resume()
-        }))
-        .on('end', async() => {
-          await shellExec("rm -rf " + txt)
-          console.log("LRN Update Finished")
-        })
-    } catch (err) {
-      console.log(err)
+        },
+      }
     }
+  })
+  async test_statement(
+  ) {
   }
-
-  async update(data: any) {
-    const {calling, translated, lata, thousand} = data
-    // let lrn = await this.lrnNumberRepository.findOne({where: {calling: calling}})
-    // if (lrn) {
-    //   lrn.calling = calling
-    //   lrn.translated = translated
-    //   lrn.lata = lata
-    //   lrn.thousand = thousand
-    //   await this.lrnNumberRepository.save(lrn)
-    // } else {
-    const lrn = new LrnNumber()
-    lrn.calling = calling
-    lrn.translated = translated
-    lrn.lata = lata
-    lrn.thousand = thousand
-
-    try {
-      await this.lrnNumberRepository.create(lrn)
-    } catch (err) {}
-    // }
-  }
-
 }

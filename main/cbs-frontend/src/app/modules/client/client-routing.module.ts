@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { AccountComponent } from './account/account.component';
+import { AutoGenerateInvoiceComponent } from './auto-generate-invoice/auto-generate-invoice.component';
+import { AutoGenerateStatementComponent } from './auto-generate-statement/auto-generate-statement.component';
 import { BannerComponent } from './banner/banner.component';
 import { BillingOverviewComponent } from './billing-overview/billing-overview.component';
 import { BuyNumberComponent } from './buy-number/buy-number.component';
@@ -8,8 +10,10 @@ import { CdrImportHistoryComponent } from './cdr-import-history/cdr-import-histo
 import { CdrLogComponent } from './cdr-log/cdr-log.component';
 import { CdrsComponent } from './cdrs/cdrs.component';
 import { ClientActivitiesComponent } from './client-activities/client-activities.component';
+import { CreateBillingStatementComponent } from './create-billing-statement/create-billing-statement.component';
 import { CustomerEditComponent } from './customer-edit/customer-edit.component';
 import { CustomerNumberComponent } from './customer-number/customer-number.component';
+import { CustomerPaymentComponent } from './customer-payment/customer-payment.component';
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import { DidNumberManagementComponent } from './did-number-management/did-number-management.component';
 import {LayoutComponent} from "./layout/layout.component";
@@ -20,11 +24,16 @@ import { ManageCustomerComponent } from './manage-customer/manage-customer.compo
 import { ManageRolesComponent } from './manage-roles/manage-roles.component';
 import { ManageUserComponent } from './manage-user/manage-user.component';
 import { ManageVendorComponent } from './manage-vendor/manage-vendor.component';
+import { RerateCallsComponent } from './rerate-calls/rerate-calls.component';
 import { ShortCutsComponent } from './short-cuts/short-cuts.component';
+import { StatementAccountComponent } from './statement-account/statement-account.component';
+import { TaxManagementComponent } from './tax-management/tax-management.component';
 import { TfnNumberManagementComponent } from './tfn-number-management/tfn-number-management.component';
 import { VendorEditComponent } from './vendor-edit/vendor-edit.component';
 import { VendorRateComparisonComponent } from './vendor-rate-comparison/vendor-rate-comparison.component';
 import { VendorRatesComponent } from './vendor-rates/vendor-rates.component';
+import { ViewBillingStatementComponent } from './view-billing-statement/view-billing-statement.component';
+import {CustomerAccountComponent} from "./customer-account/customer-account.component";
 
 const routes: Routes = [
   {
@@ -60,6 +69,11 @@ const routes: Routes = [
       {
         path: 'account',
         component: AccountComponent,
+        data: { title: 'Account', guiSection: 'Account'},
+      },
+      {
+        path: 'customer-account',
+        component: CustomerAccountComponent,
         data: { title: 'Account', guiSection: 'Account'},
       },
       {
@@ -156,6 +170,46 @@ const routes: Routes = [
         path: 'lrn',
         component: LrnComponent,
         data: {title: 'LRN Management', guiSection: 'LRN Management'},
+      },
+      {
+        path: 'auto_generate_statement',
+        component: AutoGenerateStatementComponent,
+        data: {title: 'Auto Generate Statement', guiSection: 'Auto Generate Statement'},
+      },
+      {
+        path: 'create_billing_statement',
+        component: CreateBillingStatementComponent,
+        data: {title: 'Create Billing Statement', guiSection: 'Create Billing Statement'},
+      },
+      {
+        path: 'view_billing_statement',
+        component: ViewBillingStatementComponent,
+        data: {title: 'View Billing Statement', guiSection: 'View Billing Statement'},
+      },
+      {
+        path: 'tax_management',
+        component: TaxManagementComponent,
+        data: {title: 'Tax Management', guiSection: 'Tax Management'},
+      },
+      {
+        path: 'rerate_calls',
+        component: RerateCallsComponent,
+        data: {title: 'Rerate Calls', guiSection: 'Rerate Calls'},
+      },
+      {
+        path: 'auto_generate_invoice',
+        component: AutoGenerateInvoiceComponent,
+        data: {title: 'Auto Generate Invoice', guiSection: 'Auto Generate Invoice'},
+      },
+      {
+        path: 'customer_payment',
+        component: CustomerPaymentComponent,
+        data: {title: 'Customer Payment', guiSection: 'Customer Payment'},
+      },
+      {
+        path: 'statement_account',
+        component: StatementAccountComponent,
+        data: {title: 'Statement Account', guiSection: 'Statement Account'},
       },
     ]
   },

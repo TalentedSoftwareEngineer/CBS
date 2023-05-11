@@ -8,6 +8,7 @@ import {IUser} from "../../../models/user";
 import {ROUTES} from "../../../app.routes";
 import {closePanels} from "../../../helper/utils";
 import {defaultDarkTheme, defaultLightTheme, defaultAvatar, defaultLogo} from "../default-ui-setting-values";
+import {USER_TYPE} from "../../../consts/types";
 
 @Component({
   selector: 'app-header',
@@ -89,7 +90,6 @@ export class HeaderComponent implements OnInit {
 
         // if the ui setting information of the user exists
         if (uiSettings) {
-
           // set custom avatar
           if (uiSettings.customAvatar != undefined)
             this.avatar = uiSettings.customAvatar
@@ -176,11 +176,23 @@ export class HeaderComponent implements OnInit {
     this.store.storeUser(this.user);
     try {
       //ksh
-      this.api.updateUserUISettings(this.user.id, {
-        ui_settings: this.user.ui_settings
-      }).subscribe(res=>{
+      if (this.user.type==USER_TYPE.USER) {
+        this.api.updateUserUISettings(this.user.id, {
+          ui_settings: this.user.ui_settings
+        })
+      }
 
-      });
+      if (this.user.type==USER_TYPE.CUSTOMER) {
+        this.api.updateCustomerUISettings(this.user.id, {
+          ui_settings: this.user.ui_settings
+        })
+      }
+
+      if (this.user.type==USER_TYPE.VENDOR) {
+        this.api.updateVendorUISettings(this.user.id, {
+          ui_settings: this.user.ui_settings
+        })
+      }
     } catch (e) {
     }
   }

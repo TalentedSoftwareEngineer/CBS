@@ -8,8 +8,8 @@
         </div>
         <div class="flex justify-content-center mt-5 relative">
             <input #customLogo  (change)="onChangeCustomLogoImg($event)" type="file" id="customLogo" name="customLogo" accept="image/*" style="display: none"/>
-            <button pButton (click)="customLogo.click()" icon="pi pi-file-edit" label="Choose" class="mr-2 p-button-text"></button>
-            <button pButton [hidden]="logoImg == ''" (click)="onClickRemoveLogo()" icon="pi pi-trash" label="Remove" class="p-button-danger p-button-text"></button>
+            <button pButton (click)="customLogo.click()" [disabled]="!write_permission" icon="pi pi-file-edit" label="Choose" class="mr-2 p-button-text"></button>
+            <button pButton [hidden]="logoImg == ''" (click)="onClickRemoveLogo()" [disabled]="!write_permission" icon="pi pi-trash" label="Remove" class="p-button-danger p-button-text"></button>
             <button pButton (click)="onClickApply()" icon="pi pi-check" label="Apply" [disabled]="!write_permission" class="absolute right-0 p-button-text"></button>
         </div>
     </div>

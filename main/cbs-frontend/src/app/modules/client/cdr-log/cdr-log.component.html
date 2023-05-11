@@ -1,22 +1,22 @@
 <h4 class="page_title">CDR Log</h4>
 
 <div class="card">
-  <div class="grid justify-content-end">
+  <div class="grid">
     <div class="md:col-10 col-12">
       <div class="grid">
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <span class="p-float-label">
-            <p-dropdown 
-              [options]="serverOptions" 
-              [(ngModel)]="selectServer" 
-              optionLabel="name" 
-              optionValue="value" 
+            <p-dropdown
+              [options]="serverOptions"
+              [(ngModel)]="selectServer"
+              optionLabel="name"
+              optionValue="value"
               scrollHeight="150px"
             ></p-dropdown>
             <label>Server</label>
           </span>
         </div>
-    
+
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <span class="p-float-label">
             <p-calendar
@@ -24,7 +24,7 @@
               selectionMode="range"
               [readonlyInput]="true"
               [(ngModel)]="selectedDate"
-              dateFormat="mm/dd/yyyy"
+              dateFormat="mm/dd/yy"
               [showIcon]="true"
               [numberOfMonths]="2"
               styleClass="date_range"
@@ -48,38 +48,40 @@
 
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <span class="p-float-label">
-            <p-dropdown 
-              [options]="napOptions" 
-              [(ngModel)]="selectNap" 
-              optionLabel="name" 
-              optionValue="value" 
+            <p-dropdown
+              [options]="napOptions"
+              [(ngModel)]="selectNap"
+              optionLabel="name"
+              optionValue="value"
+              [filter]="true"
+              filterBy="name"
               scrollHeight="150px"
             ></p-dropdown>
-            <label>Nap</label>
+            <label>NAP</label>
           </span>
         </div>
-    
+
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <c-duration-range (setDurationRage)="setFilterDurationRage($event)"></c-duration-range>
         </div>
-    
+
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <c-call-count-range (setCallCountRage)="setFilterCallCountRage($event)"></c-call-count-range>
         </div>
-    
+
         <!-- <div class="col-12 md:col-2 p-fluid pl-0 pr-0">
           <span class="p-float-label">
-            <p-dropdown 
-              [options]="directionOptions" 
-              [(ngModel)]="selectDirection" 
-              optionLabel="name" 
-              optionValue="value" 
+            <p-dropdown
+              [options]="directionOptions"
+              [(ngModel)]="selectDirection"
+              optionLabel="name"
+              optionValue="value"
               scrollHeight="150px"
             ></p-dropdown>
             <label>Direction</label>
           </span>
         </div> -->
-    
+
         <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
           <!-- <div class="p-inputgroup"> -->
             <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
@@ -87,7 +89,7 @@
         </div>
       </div>
     </div>
-    <div class="md:col-2 flex align-items-end">
+    <div class="lg:col-2 col-12 flex align-items-end">
       <div class="grid">
         <div class="md:col-6 col-6">
           <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
@@ -102,7 +104,7 @@
 
 <div class="card">
   <!-- <h5><span *ngIf="resultsLength!=-1">Total {{resultsLength}} Call</span><span *ngIf="resultsLength>1">s</span><i *ngIf="resultsLength>0&&filterResultLength>0&&filterResultLength<resultsLength" style="font-size: medium;">, {{filterResultLength}} Call<span *ngIf="filterResultLength>1">s</span> Filtered</i></h5> -->
-  <h5><span *ngIf="resultsLength!=-1">Total {{resultsLength}} Call</span><span *ngIf="resultsLength>1">s</span></h5>
+  <h5><span *ngIf="filterResultLength!=-1">Total {{filterResultLength}} Call</span><span *ngIf="filterResultLength>1">s</span></h5>
   <p-table [value]="cdr_logs" responsiveLayout="stack" [responsive]="true">
     <ng-template pTemplate="header">
       <tr>
@@ -121,7 +123,7 @@
         <th class="text-align-center">Calls</th>
         <!-- <th class="text-align-center" [ngClass]="sortActive === 'Direction' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
           <a (click)="onSortChange('Direction')">Direction</a>
-        </th> --> 
+        </th> -->
         <th class="text-align-center" [ngClass]="sortActive === 'Duration' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
           <a (click)="onSortChange('Duration')">Duration</a>
         </th>

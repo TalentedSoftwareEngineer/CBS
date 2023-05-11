@@ -1,4 +1,4 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
+import {Entity, model, property} from '@loopback/repository';
 
 @model({
   name: 'customer_billing'

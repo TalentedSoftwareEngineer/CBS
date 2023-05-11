@@ -165,6 +165,10 @@
                 <p-dropdown [options]="roles" id="role_id" name="role_id" [(ngModel)]="input_role_id" optionLabel="name" scrollHeight="150px" styleClass="w-100"></p-dropdown>
                 <label for="role_id">Role</label>
               </span>
+              <span class="field p-float-label">
+                <p-dropdown [options]="timezones" id="timezone" name="timezone" [(ngModel)]="input_timezone" optionLabel="name" optionValue="value" scrollHeight="150px" styleClass="w-100"></p-dropdown>
+                <label for="timezone">Time Zone</label>
+              </span>
               <div class="field">
                 <span class="p-float-label">
                   <input type="text" id="email" name="email" [ngClass]="{'ng-dirty': !validEmail, 'ng-invalid': !validEmail}" (input)="onInputEmail()" pInputText [(ngModel)]="input_email">

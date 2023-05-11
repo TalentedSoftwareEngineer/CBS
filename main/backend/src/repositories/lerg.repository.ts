@@ -1,6 +1,6 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository, DefaultTransactionalRepository} from '@loopback/repository';
-import {CdrDataSource} from '../datasources';
+import {LergDatasource} from '../datasources';
 import {Lerg, LergRelations} from '../models';
 
 export class LergRepository extends DefaultCrudRepository<
@@ -9,7 +9,7 @@ export class LergRepository extends DefaultCrudRepository<
   LergRelations
 > {
   constructor(
-    @inject('datasources.cdr') dataSource: CdrDataSource,
+    @inject('datasources.lerg') dataSource: LergDatasource,
   ) {
     super(Lerg, dataSource);
   }
