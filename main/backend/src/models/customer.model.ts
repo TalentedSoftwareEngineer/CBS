@@ -78,6 +78,11 @@ export class Customer extends Entity {
 
   @property({
     type: 'string',
+  })
+  time_format?: string;
+
+  @property({
+    type: 'string',
     required: true,
   })
   rate_type: string;

@@ -280,12 +280,12 @@ export class CustomerController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewRatesCustomer',
-            exclude: ['id', 'type', 'allowed', 'ui_settings', 'company_id', 'company_name', 'first_name', 'last_name', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
+            exclude: ['id', 'type', 'allowed', 'ui_settings', 'company_id', 'company_name', 'first_name', 'last_name','timezone','time_format', 'email', 'status', 'created_by', 'created_at', 'updated_by', 'updated_at'],
           }),
         },
       },
     })
-      customer: Omit<Customer, 'id,type,allowed,ui_settings,company_id,company_name,first_name,last_name,email,status,created_at,created_by,updated_at,updated_by'>,
+      customer: Omit<Customer, 'id,type,allowed,ui_settings,company_id,company_name,first_name,last_name,timezone,time_format,email,status,created_at,created_by,updated_at,updated_by'>,
   ): Promise<void> {
     const profile = JSON.parse(currentUserProfile[securityId]);
     if (!(profile.type==USER_TYPE.CUSTOMER && id==profile.user.id) && !profile.permissions.includes(PERMISSIONS.WRITE_CUSTOMERS))

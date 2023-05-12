@@ -110,7 +110,7 @@ export class BillingService {
         res.npanxx = item.LRN.substring(0, 6)
       } else {
         let num = item.Calling.replace(/-/g, '')
-        num = item.Calling.replace(/-/g, '')
+        // num = item.Calling.replace(/-/g, '')
         if (num.length>0 && num.substring(0,1)=="+") {
           if (num.length==12 && num.substring(1,2)=="1")
             res.npanxx = num.substring(2, 8)

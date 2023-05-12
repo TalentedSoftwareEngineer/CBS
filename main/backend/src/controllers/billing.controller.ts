@@ -130,25 +130,22 @@ export class BillingController {
         content: {
           'application/json': {
             schema: {
-              type: "array",
-              items: {
-                type: 'object',
-                properties: {
-                  customer_id: {
-                    type: "number",
-                  },
-                  server_id: {
-                    type: "string",
-                  },
-                  start_at: {
-                    type: "number",
-                  },
-                  end_at: {
-                    type: "number",
-                  },
-                }
+              type: 'object',
+              properties: {
+                customer_id: {
+                  type: "number",
+                },
+                server_id: {
+                  type: "string",
+                },
+                start_at: {
+                  type: "number",
+                },
+                end_at: {
+                  type: "number",
+                },
               }
-            },
+            }
           },
         },
       })
@@ -177,7 +174,7 @@ export class BillingController {
 
     // get max statement no
     let no = (start_at+"").substring(0, 8)// + DataUtils.pad(Math.floor(Math.random()*999999)+"", 6)
-    const st = await this.statementRepository.execute(" select max(`no`) as `no` from `no_pending` where `type`='" + NO_TYPE.STATEMENT + "' and substr(`no`, 0, 8)='" + no + "' ")
+    const st = await this.statementRepository.execute(" select max(`no`) as `no` from `no_pending` where `type`='" + NO_TYPE.STATEMENT + "' and substr(`no`, 1, 8)='" + no + "' ")
 
     no = no + "0001"
     if (st && st.length>0) {
@@ -214,37 +211,34 @@ export class BillingController {
         content: {
           'application/json': {
             schema: {
-              type: "array",
-              items: {
-                type: 'object',
-                properties: {
-                  stmt_no: {
-                    type: "string"
-                  },
-                  customer_id: {
-                    type: "number",
-                  },
-                  server_id: {
-                    type: "string",
-                  },
-                  start_at: {
-                    type: "number",
-                  },
-                  end_at: {
-                    type: "number",
-                  },
-                  total_calls: {
-                    type: "number",
-                  },
-                  total_duration: {
-                    type: "number",
-                  },
-                  total_cost: {
-                    type: "number",
-                  },
-                  content: {
-                    type: "string"
-                  }
+              type: 'object',
+              properties: {
+                stmt_no: {
+                  type: "string"
+                },
+                customer_id: {
+                  type: "number",
+                },
+                server_id: {
+                  type: "string",
+                },
+                start_at: {
+                  type: "number",
+                },
+                end_at: {
+                  type: "number",
+                },
+                total_calls: {
+                  type: "number",
+                },
+                total_duration: {
+                  type: "number",
+                },
+                total_cost: {
+                  type: "number",
+                },
+                content: {
+                  type: "string"
                 }
               }
             },

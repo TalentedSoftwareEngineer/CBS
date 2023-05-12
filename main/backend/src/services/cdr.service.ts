@@ -552,6 +552,7 @@ export class CdrService {
     let NAP_Answer = "`NAP_Answer`"
     let StartTime = "`StartTime`"
     let Duration = "`Duration`"
+    let LRN = "`LRN`"
 
     let where = " ( " + alias + StartTime + " between " + start_at + " and " + end_at + " ) "
 
@@ -566,6 +567,8 @@ export class CdrService {
         v_where += alias + Calling + " like '%" + num_value + "%' "
         v_where += " or "
         v_where += alias + Called + " like '%" + num_value + "%' "
+        v_where += " or "
+        v_where += alias + LRN + " like '%" + num_value + "%' "
       }
 
       if (v_where!="")

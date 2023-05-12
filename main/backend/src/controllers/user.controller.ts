@@ -138,6 +138,7 @@ export class UserController {
     user.customer_id = req.customer_id
     user.role_id = req.role_id
     user.timezone = req.timezone
+    user.time_format = req.time_format
 
     user.created_by = profile.user.id
     user.created_at = new Date().toISOString()

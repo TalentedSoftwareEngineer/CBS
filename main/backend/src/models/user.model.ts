@@ -55,6 +55,11 @@ export class User extends Entity {
   @property({
     type: 'string',
   })
+  time_format?: string;
+
+  @property({
+    type: 'string',
+  })
   ui_settings?: string;
 
   @property({

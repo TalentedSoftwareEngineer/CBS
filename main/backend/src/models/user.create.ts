@@ -9,6 +9,7 @@ export class UserCreateRequest {
     last_name: string;
 
     timezone?: string;
+    time_format?: string;
 
     customer_id: number;
     role_id: number;
