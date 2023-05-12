@@ -1,27 +1,75 @@
-# Frontend
+# backend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.2.18.
+This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/lb4/Command-line-interface.html) with the
+[initial project layout](https://loopback.io/doc/en/lb4/Loopback-application-layout.html).
 
-## Development server
+## Install dependencies
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+By default, dependencies were installed when this application was generated.
+Whenever dependencies in `package.json` are changed, run the following command:
 
-## Code scaffolding
+```sh
+npm install
+```
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+To only install resolved dependencies in `package-lock.json`:
 
-## Build
+```sh
+npm ci
+```
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Run the application
 
-## Running unit tests
+```sh
+npm start
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+You can also run `node .` to skip the build step.
 
-## Running end-to-end tests
+Open http://127.0.0.1:3000 in your browser.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## Rebuild the project
 
-## Further help
+To incrementally build the project:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```sh
+npm run build
+```
+
+To force a full build by cleaning up cached artifacts:
+
+```sh
+npm run rebuild
+```
+
+## Fix code style and formatting issues
+
+```sh
+npm run lint
+```
+
+To automatically fix such issues:
+
+```sh
+npm run lint:fix
+```
+
+## Other useful commands
+
+- `npm run migrate`: Migrate database schemas for models
+- `npm run openapi-spec`: Generate OpenAPI spec into a file
+- `npm run docker:build`: Build a Docker image for this application
+- `npm run docker:run`: Run this application inside a Docker container
+
+## Tests
+
+```sh
+npm test
+```
+
+## What's next
+
+Please check out [LoopBack 4 documentation](https://loopback.io/doc/en/lb4/) to
+understand how you can continue to add features to this application.
+
+[![LoopBack](https://github.com/loopbackio/loopback-next/raw/master/docs/site/imgs/branding/Powered-by-LoopBack-Badge-(blue)-@2x.png)](http://loopback.io/)
