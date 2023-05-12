@@ -1,0 +1,761 @@
+<div class="flex mb-4 align-items-center justify-content-between">
+    <h4 class="mb-0">Edit Vendor</h4>
+    <button pButton pRipple type="button" size="large" (click)="onBack()"  label="Back" icon="pi pi-chevron-left" class="p-button-text"></button>
+</div>
+
+<div class="card">
+    <p-tabView [(activeIndex)]="tabIndex">
+        <p-tabPanel header="General">
+        <form [formGroup]="companyForm" (ngSubmit)="onUpdatedCompanySubmit()">
+            <div class="grid p-fluid">
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" class="form-control" id="company_name" formControlName="company_name" pInputText [(ngModel)]="inputCompanyName" class="{{isCompanyFormFieldValid('company_name') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="company_name">Company Name</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" class="form-control" id="company_id" formControlName="company_id" pInputText [(ngModel)]="inputCompanyId" class="{{isCompanyFormFieldValid('company_id') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="company_id">Company ID</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" class="form-control" id="first_name" formControlName="first_name" pInputText [(ngModel)]="inputFirstName" class="{{isCompanyFormFieldValid('first_name') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="first_name">First Name</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" class="form-control" id="last_name" formControlName="last_name" pInputText [(ngModel)]="inputLastName" class="{{isCompanyFormFieldValid('last_name') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="last_name">Last Name</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" class="form-control" id="email" formControlName="email" pInputText [(ngModel)]="inputEmail" class="{{isCompanyFormFieldValid('email') ? 'ng-invalid ng-dirty' : ''}}">
+                <label for="email">Email</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <p-dropdown [options]="statusOptions" formControlName="status" id="status" optionLabel="name" optionValue="value" scrollHeight="200px"></p-dropdown>
+                <label>Status</label>
+                </span>
+            </div>
+            </div>
+
+            <div class="flex justify-content-end">
+                <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+            </div>
+        </form>
+        </p-tabPanel>
+
+        <p-tabPanel header="Additional">
+        <form [formGroup]="additionalForm" (ngSubmit)="onUpdatedAdditionalSubmit()">
+            <div class="grid p-fluid">
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="address" formControlName="address" pInputText [(ngModel)]="inputAddress">
+                <label for="address">Address</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="city" formControlName="city" pInputText [(ngModel)]="inputCity">
+                <label for="city">City</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="state" formControlName="state" pInputText [(ngModel)]="inputState">
+                <label for="state">State</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="country" formControlName="country" pInputText [(ngModel)]="inputCountry">
+                <label for="country">Country</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="zip" formControlName="zip" pInputText [(ngModel)]="inputZip">
+                <label for="zip">Zip</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="phone" formControlName="phone" pInputText [(ngModel)]="inputPhone">
+                <label for="phone">Phone</label>
+                </span>
+            </div>
+            <div class="md:col-6 col-12">
+                <span class="p-float-label">
+                <input type="text" id="ssn" formControlName="ssn" pInputText [(ngModel)]="inputSSN">
+                <label for="ssn">EIN / SSN Number</label>
+                </span>
+            </div>
+            </div>
+            <div class="flex justify-content-end">
+            <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+            </div>
+        </form>
+        </p-tabPanel>
+
+        <p-tabPanel header="Billing">
+            <form [formGroup]="billingForm" (ngSubmit)="onUpdatedBillingSubmit()">
+                <div class="grid p-fluid">
+                    <div class="col-12 md:col-6">
+                        <span class="p-float-label">
+                        <p-dropdown [options]="billingMethodOptions" formControlName="method" id="method" optionLabel="name" optionValue="value" scrollHeight="150px"></p-dropdown>
+                        <label>Billing Method</label>
+                        </span>
+                    </div>
+                    <div class="col-12 md:col-6">
+                        <span class="p-float-label">
+                        <p-dropdown [options]="billingCycleOptions" formControlName="cycle" id="cycle" optionLabel="name" optionValue="value" [filter]="true" filterBy="name" scrollHeight="250px"></p-dropdown>
+                        <label>Billing Cycle</label>
+                        </span>
+                    </div>
+                    <div class="col-12 md:col-6">
+                        <span class="p-float-label">
+                        <p-calendar
+                            dateFormat="mm/dd/yy"
+                            [showButtonBar]="true"
+                            formControlName="start"
+                        ></p-calendar>
+                        <label>Billing Start</label>
+                    </span>
+                    </div>
+                    <div class="col-12 md:col-6">
+                        <span class="p-float-label">
+                        <input type="text"  class="{{isBillingFormFieldValid('billing_email') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="billing_email" formControlName="billing_email" pInputText [(ngModel)]="inputBillingEmail">
+                        <label for="billing_email">Billing Email</label>
+                        </span>
+                    </div>
+                </div>
+                <div class="flex justify-content-end">
+                    <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+                </div>
+            </form>
+        </p-tabPanel>
+
+        <p-tabPanel header="Credentials">
+            <form [formGroup]="credentialForm" (ngSubmit)="onUpdatedCredentialSubmit()">
+                <div class="grid p-fluid">
+                <div class="col-12 md:col-6">
+                    <span class="p-float-label">
+                    <input type="text" class="form-control" id="username" formControlName="username" pInputText [(ngModel)]="inputUserName" class="{{isCredentialFormFieldValid('username') ? 'ng-invalid ng-dirty' : ''}}">
+                    <label for="username">User Name</label>
+                    </span>
+                </div>
+                <div class="col-12 md:col-6 pl-5 flex align-items-center">
+                    <p-checkbox formControlName="allowed" [(ngModel)]="allowed" (onChange)="onChangeAllowed()" label="Allow Login" [binary]="true"></p-checkbox>
+                </div>
+                <div class="col-12 md:col-6">
+                    <span class="p-float-label">
+                    <p-password id="new_password" formControlName="new_password" (onBlur)="onBlurNewPassword()" [ngClass]="isCredentialFormFieldValid('new_password') ? 'ng-invalid ng-dirty' : ''" [(ngModel)]="input_new_password" [disabled]="!allowed" [feedback]="false"></p-password>
+                    <label for="new_password">New Password</label>
+                    </span>
+                </div>
+                <div class="col-12 md:col-6">
+                    <span class="p-float-label">
+                    <p-password id="confirm_password" class="form-control" formControlName="confirm_password" (onBlur)="onBlurConfirmPassword()" [ngClass]="isCredentialFormFieldValid('confirm_password') ? 'ng-invalid ng-dirty' : ''" [(ngModel)]="input_confirm_password" [disabled]="!allowed" [feedback]="false"></p-password>
+                    <label for="confirm_password">Confirm Password</label>
+                    </span>
+                </div>
+                </div>
+                <div class="flex justify-content-end">
+                <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+                </div>
+            </form>
+        </p-tabPanel>
+        <p-tabPanel header="NAP">
+            <div class="card pb-3">
+                <div class="grid">
+                    <div class="col-12 xl:col-8">
+                        <div class="grid">
+                            <div class="xl:col-3 col-6 p-fluid pl-0 pr-0">
+                                <span class="p-float-label">
+                                    <p-dropdown [options]="filterStatusOptions" id="status_search" [(ngModel)]="statusFilterValue" optionLabel="name" optionValue="value" scrollHeight="150px" [disabled]="isLoading"></p-dropdown>
+                                    <label>Status</label>
+                                </span>
+                            </div>
+                            <div class="xl:col-3 col-6 p-fluid pl-0 pr-0">
+                                <span class="p-float-label">
+                                    <p-dropdown [options]="filterDirectionOptions" id="direction_search" [(ngModel)]="directionFilterValue" optionLabel="name" optionValue="value" scrollHeight="150px" [disabled]="isLoading"></p-dropdown>
+                                    <label>Direction</label>
+                                </span>
+                            </div>
+                            <div class="xl:col-4 col-12 p-fluid pl-0 pr-0">
+                                <div class="p-inputgroup">
+                                    <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
+                                    <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 xl:col-4 text-right">
+                        <span class="p-buttonset">
+                            <button pButton pRipple label="Add NAP" (click)="openModal('Add')" icon="pi pi-plus" [disabled]="isLoading" class="p-button-success"></button>
+                            <button pButton pRipple label="Upload" (click)="openUploadModal()" icon="pi pi-upload" [disabled]="isLoading" class="p-button-help"></button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h5><span *ngIf="resultsLength!=-1">Total {{resultsLength}} Record</span><span *ngIf="resultsLength>1">s</span><i *ngIf="resultsLength!=-1&&filterResultLength!=-1&&filterResultLength<resultsLength" style="font-size: medium;">, {{filterResultLength}} Record<span *ngIf="filterResultLength>1">s</span> Filtered</i></h5>
+                <p-table [value]="groups" responsiveLayout="stack" [responsive]="true">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th class="text-align-center" [ngClass]="sortActive === 'rgid' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+                        <a (click)="onSortChange('rgid')">NAP ID</a>
+                      </th>
+                      <th class="text-align-center" [ngClass]="sortActive === 'partition_id' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+                        <a (click)="onSortChange('partition_id')">PartitionID</a>
+                      </th>
+                      <th class="text-align-center" [ngClass]="sortActive === 'description' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+                        <a (click)="onSortChange('description')">Description</a>
+                      </th>
+                      <th class="text-align-center" [ngClass]="sortActive === 'direction' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+                        <a (click)="onSortChange('direction')">Direction</a>
+                      </th>
+                      <th class="text-align-center" [ngClass]="sortActive === 'ip' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+                        <a (click)="onSortChange('ip')">IP</a>
+                      </th>
+                      <th class="text-align-center">
+                        <a>Status</a>
+                      </th>
+                      <th class="text-align-center w-100px">Action</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-group>
+                    <tr>
+                        <td class="text-align-center">
+                            <span class="p-column-title">NAP ID</span>
+                            {{ group.rgid }}
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-column-title">PartitionID</span>
+                            {{ group.partition_id }}
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-column-title">Description</span>
+                            {{ group.description }}
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-column-title">Direction</span>
+                            {{ group.direction }}
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-column-title">IP</span>
+                            {{ group.ip }}
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-column-title">Status</span>
+                            <ng-container *ngIf="group.active">
+                                <i class="pi pi-check"></i>
+                            </ng-container>
+                            <ng-container *ngIf="!group.active">
+                                <i class="pi pi-times"></i>
+                            </ng-container>
+                        </td>
+                        <td class="text-align-center">
+                            <span class="p-buttonset">
+                                <!-- <button *ngIf="!group.active" pButton type="button" title="Active" icon="pi pi-eye" class="p-button-rounded p-button-outlined p-button-help" (click)="viewUser($event, group.id)"></button>
+                                <button *ngIf="group.active" pButton type="button" title="Inactive" icon="pi pi-eye-slash" class="p-button-rounded p-button-outlined p-button-help" (click)="viewUser($event, group.id)"></button> -->
+                                <button pButton type="button" title="Edit" icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-warning" (click)="onOpenEditModal($event, group.id)"></button>
+                                <button pButton type="button" title="Delete" icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="deleteGroup($event, group.id)"></button>
+                            </span>
+                        </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              
+                <div class="flex justify-content-center align-items-center gap-3">
+                    <p-paginator [rows]="pageSize" [totalRecords]="filterResultLength" [rowsPerPageOptions]="rowsPerPageOptions" (onPageChange)="paginate($event)"></p-paginator>
+                </div>
+            </div>
+        </p-tabPanel>
+        
+        <p-tabPanel header="Rates">
+            <div class="card">
+                <form [formGroup]="primaryRateForm" (ngSubmit)="onUpdatedPrimarySubmit()">
+                    <div class="grid p-fluid">
+                        <div class="col-12 md:col-6">
+                            <span class="p-float-label">
+                              <p-dropdown [options]="ratesTypeOptions" [(ngModel)]="selectRateType" (onChange)="onChangeRatesType($event)" formControlName="rate_type" id="rate_type" optionLabel="name" optionValue="value" scrollHeight="150px"></p-dropdown>
+                              <label>Rate Type</label>
+                            </span>
+                        </div>
+                        <ng-container *ngIf="selectRateType=='FIXED'">
+                            <div class="col-12 md:col-6 p-0"></div>
+                            <div class="col-12 md:col-6">
+                                <span class="p-float-label">
+                                  <input type="text" class="form-control" id="flat_rate" formControlName="flat_rate" pInputText [(ngModel)]="inputFlatRate" class="{{isPrimaryRateFormFieldValid('flat_rate') ? 'ng-invalid ng-dirty' : ''}}">
+                                  <label for="flat_rate">Flat Rate</label>
+                                </span>
+                            </div>
+                        </ng-container>
+
+                        <div class="col-12 md:col-6">
+                            <span class="p-float-label">
+                              <input type="text" class="form-control" id="default_rate" formControlName="default_rate" pInputText [(ngModel)]="inputDefaultRate" class="{{isPrimaryRateFormFieldValid('default_rate') ? 'ng-invalid ng-dirty' : ''}}">
+                              <label for="default_rate">Default Rate</label>
+                            </span>
+                        </div>
+                        <div class="col-12 md:col-6">
+                            <span class="p-float-label">
+                                <input type="number" class="form-control" id="inidur" formControlName="inidur" pInputText [(ngModel)]="inputInidur" class="{{isPrimaryRateFormFieldValid('inidur') ? 'ng-invalid ng-dirty' : ''}}">
+                                <label for="inidur">Init Duration</label>
+                            </span>
+                        </div>
+                        <div class="col-12 md:col-6">
+                            <span class="p-float-label">
+                                <input type="number" class="form-control" id="succdur" formControlName="succdur" pInputText [(ngModel)]="inputSuccdur" class="{{isPrimaryRateFormFieldValid('succdur') ? 'ng-invalid ng-dirty' : ''}}">
+                                <label for="succdur">Succ Duration</label>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-content-end">
+                        <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+                    </div>
+                </form>
+            </div>
+
+            <ng-container *ngIf="selectRateType=='FIXED';else InterIntraRate">
+                <div class="card pb-3">
+                    <div class="grid">
+                        <div class="col-12 xl:col-8">
+                            <div *ngIf="isGenerating" class="grid">
+                                <div class="xl:col-7 col-12 p-fluid pl-0 pr-0">
+                                    <div class="p-inputgroup">
+                                        <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="npanxxFilterValue" [disabled]="npanxxIsLoading" (keyup.enter)="onNpanxxClickFilter()">
+                                        <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="npanxxIsLoading ? '' : onNpanxxClickFilter()" [style]="npanxxIsLoading ? {opacity: 0.5} : ''"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 xl:col-4 text-right">
+                            <span class="p-buttonset">
+                                <button pButton pRipple type="button" size="large" (click)="onGenerate()" label="Generate" icon="pi pi-plus-circle"></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" *ngIf="isGenerating">
+                    <h5><span *ngIf="npanxxResultsLength!=-1">Total {{npanxxResultsLength}} Record</span><span *ngIf="npanxxResultsLength>1">s</span><i *ngIf="npanxxResultsLength>0&&npanxxFilterResultLength>0&&npanxxFilterResultLength<npanxxResultsLength" style="font-size: medium;">, {{npanxxFilterResultLength}} Record<span *ngIf="npanxxFilterResultLength>1">s</span> Filtered</i></h5>
+                    <p-table [value]="npanxxRates" responsiveLayout="stack" [responsive]="true">
+                      <ng-template pTemplate="header">
+                        <tr>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'npanxx' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('npanxx')">NPANXX</a>
+                          </th>
+                          <th class="text-align-center">NPA</th>
+                          <th class="text-align-center">NXX</th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'lata' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('lata')">LATA</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'rate_center' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('rate_center')">Rate Center</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'ocn' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('ocn')">OCN</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'ocn_name' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                              <a (click)="onNpanxxSortChange('ocn_name')">OCN NAME</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'state' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('state')">STATE</a>
+                          </th>
+                          <th class="text-align-center" [ngClass]="npanxxSortActive === 'category' ? 'sorting_' + npanxxSortDirection.toLowerCase() :'sorting'">
+                            <a (click)="onNpanxxSortChange('category')">CATEGORY</a>
+                          </th>
+                          <th class="text-align-center">Flat Rate</th>
+                          <!-- <th class="text-align-center">Action</th> -->
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="body" let-npanxx_item>
+                        <tr>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NPANXX</span>
+                            {{ npanxx_item.npanxx}}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NPA</span>
+                            {{ npanxx_item.npa }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">NXX</span>
+                            {{ npanxx_item.nxx }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">LATA</span>
+                            {{ npanxx_item.lata }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">Rate Center</span>
+                            {{ npanxx_item.rate_center }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">OCN</span>
+                            {{ npanxx_item.ocn }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">OCN NAME</span>
+                            {{ npanxx_item.ocn_name }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">STATE</span>
+                            {{ npanxx_item.state }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">CATEGORY</span>
+                            {{ npanxx_item.category }}
+                          </td>
+                          <td class="text-align-center">
+                            <span class="p-column-title">Flat Rate</span>
+                            {{ npanxx_item.flat_rate }}
+                          </td>
+                          <!-- <td class="text-align-center">
+                            <span class="p-buttonset">
+                              <button pButton type="button" title="Edit" icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-warning" (click)="onOpenEditModal($event, npanxx_item.id)"></button>
+                              <button pButton type="button" title="Delete" icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="delete($event, npanxx_item.id)"></button>
+                            </span>
+                          </td> -->
+                        </tr>
+                      </ng-template>
+                    </p-table>
+                  
+                    <p-paginator [rows]="npanxxPageSize" [totalRecords]="npanxxFilterResultLength" [rowsPerPageOptions]="npanxxRowsPerPageOptions" (onPageChange)="npanxxPaginate($event)"></p-paginator>
+                </div>
+            </ng-container>
+
+            <ng-template #InterIntraRate>
+                <div class="card pb-3">
+                    <div class="grid">
+                        <div class="col-12 xl:col-8">
+                            <div class="grid">
+                                <div class="xl:col-7 col-12 p-fluid pl-0 pr-0">
+                                    <div class="p-inputgroup">
+                                        <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="rateFilterValue" [disabled]="rateIsLoading" (keyup.enter)="onRateClickFilter()">
+                                        <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="rateIsLoading ? '' : onRateClickFilter()" [style]="rateIsLoading ? {opacity: 0.5} : ''"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="col-12 xl:col-4 text-right">
+                            <span class="p-buttonset">
+                                <button pButton pRipple label="Add Rate" (click)="openRateModal('Add')" icon="pi pi-plus" [disabled]="rateIsLoading" class="p-button-success"></button>
+                                <button pButton pRipple label="Upload" (click)="flag_openRateUploadDialog=true" icon="pi pi-upload" [disabled]="rateIsLoading" class="p-button-help"></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="card">
+                    <h5><span *ngIf="rateResultsLength!=-1">Total {{rateResultsLength}} Record</span><span *ngIf="rateResultsLength>1">s</span><i *ngIf="rateResultsLength!=-1&&rateFilterResultLength!=-1&&rateFilterResultLength<rateResultsLength" style="font-size: medium;">, {{rateFilterResultLength}} Record<span *ngIf="rateFilterResultLength>1">s</span> Filtered</i></h5>
+                    <p-table [value]="rates" responsiveLayout="stack" [responsive]="true">
+                        <ng-template pTemplate="header">
+                        <tr>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'npanxx' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('npanxx')">NPANXX</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'lata' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('lata')">LATA</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'ocn' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('ocn')">OCN</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'state' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('state')">Loc STATE</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'ocn_name' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('ocn_name')">OCN_NAME</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'category' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('category')">CATEGORY</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'intra_rate' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('intra_rate')">Intra Rate</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'inter_rate' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('inter_rate')">Inter Rate</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'init_duration' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('init_duration')">Init. Duration</a>
+                            </th>
+                            <th class="text-align-center" [ngClass]="rateSortActive === 'succ_duration' ? 'sorting_' + rateSortDirection.toLowerCase() :'sorting'">
+                                <a (click)="onRateSortChange('succ_duration')">Succ. Duration</a>
+                            </th>
+                            <th class="text-align-center w-100px">Action</th>
+                        </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-rate>
+                        <tr>
+                            <td class="text-align-center">
+                                <span class="p-column-title">NPANXX</span>
+                                {{ rate.npanxx }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">LATA</span>
+                                {{ rate.lata }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">OCN</span>
+                                {{ rate.ocn }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">Loc STATE</span>
+                                {{ rate.state }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">OCN_NAME</span>
+                                {{ rate.ocn_name }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">CATEGORY</span>
+                                {{ rate.category }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">Intra Rate</span>
+                                {{ rate.intra_rate }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">Inter Rate</span>
+                                {{ rate.inter_rate }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">Init. Dur</span>
+                                {{ rate.init_duration }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-column-title">Succ. Dur</span>
+                                {{ rate.succ_duration }}
+                            </td>
+                            <td class="text-align-center">
+                                <span class="p-buttonset">
+                                    <button pButton type="button" title="Edit" icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-warning" (click)="onOpenRateEditModal($event, rate.id)"></button>
+                                    <button pButton type="button" title="Delete" icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="deleteRate($event, rate.id)"></button>
+                                </span>
+                            </td>
+                        </tr>
+                        </ng-template>
+                    </p-table>
+                    
+                    <div class="flex justify-content-center align-items-center gap-3">
+                        <p-paginator [rows]="ratePageSize" [totalRecords]="rateFilterResultLength" [rowsPerPageOptions]="rateRowsPerPageOptions" (onPageChange)="ratePaginate($event)"></p-paginator>
+                    </div>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</div>
+
+<p-dialog [header]="modalTitle + ' NAP'" styleClass="rg-modal" [(visible)]="flag_openDialog" (onHide)="closeModal()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '80vw'}" [modal]="true" [draggable]="false" [resizable]="false">
+    <form [formGroup]="resourceGroupForm" (ngSubmit)="onResourceGroupSubmit(modalTitle)">
+        <div class="grid p-fluid">
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isResourceGroupFormFieldValid('rgid') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="rgid" formControlName="rgid" pInputText>
+                    <label for="rgid">NAP ID</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="number" class="{{isResourceGroupFormFieldValid('partition_id') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="partition_id" formControlName="partition_id" pInputText>
+                    <label for="partition_id">Partition ID</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isResourceGroupFormFieldValid('ip') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" id="ip" formControlName="ip" pInputText>
+                    <label for="ip">IP</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isResourceGroupFormFieldValid('description') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="description" formControlName="description" pInputText>
+                    <label for="description">Description</label>
+                </span>
+            </div>
+
+            <div class="col-12">
+                <div class="grid p-fluid">
+                    <div class="col-6">
+                        <span class="p-float-label">
+                            <p-dropdown [options]="directionOptions" formControlName="direction" id="direction" optionLabel="name" optionValue="value" scrollHeight="150px"></p-dropdown>
+                            <label for="direction">Direction</label>
+                        </span>
+                    </div>
+                    <div class="col-3 flex align-items-center">
+                        <p-checkbox formControlName="active" label="Active" [binary]="true"></p-checkbox>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-content-end">
+            <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+        </div>
+    </form>
+</p-dialog>
+
+<p-dialog header="Upload" styleClass="c-modal" [(visible)]="flag_openUploadDialog" (onHide)="closeUploadModal()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '50vw'}" [modal]="true" [draggable]="false" [resizable]="false">
+    <div class="grid pt-2">
+        <div class="p-fluid lg:col-8 col-12">
+            <span class="field p-float-label">
+                <p-dropdown [options]="uploadActionOptions" id="uploadMethod" [(ngModel)]="uploadMethod" optionLabel="name" optionValue="value" scrollHeight="150px"></p-dropdown>
+                <label>Action</label>
+            </span>
+        </div>
+        <div class="lg:col-4 col-12 text-right">
+            <button pButton pRipple label="Choose File" (click)="fileInput.click()" [disabled]="isUpLoading" icon="pi pi-upload" class="p-button-text"></button>
+            <input #fileInput type="file" (click)="onClickUpload($event)" (change)="changeListener($event)" style="display: none" accept=".csv"/>
+        </div>
+    </div>
+
+    <strong>* The csv file format must be the same as the following table format.</strong>
+    <div class="card mt-5">
+        <p-table [value]="uploadGroups">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="text-center">NAP ID</th>
+                    <th class="text-center">PartitionID</th>
+                    <th class="text-center">IP</th>
+                    <th class="text-center">Direction</th>
+                    <th class="text-center">Description</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-upload>
+                <tr>
+                    <td class="text-center">{{upload.rgid}}</td>
+                    <td class="text-center">{{upload.partition_id}}</td>
+                    <td class="text-center">{{upload.ip}}</td>
+                    <td class="text-center">{{upload.direction}}</td>
+                    <td class="text-center">{{upload.description}}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</p-dialog>
+
+<p-dialog [header]="rateModalTitle + ' Rate'" styleClass="c-modal" [(visible)]="flag_openRateDialog" (onHide)="closeRateModal()" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '80vw'}" [modal]="true" [draggable]="false" [resizable]="false">
+    <form [formGroup]="rateForm" (ngSubmit)="onRateSubmit(rateModalTitle)">
+        <div class="grid p-fluid">
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('npanxx') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="npanxx" formControlName="npanxx" pInputText>
+                    <label for="npanxx">NPANXX</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('lata') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="lata" formControlName="lata" pInputText>
+                    <label for="lata">LATA</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('ocn') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="ocn" formControlName="ocn" pInputText>
+                    <label for="ocn">OCN</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('loc_state') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="loc_state" formControlName="loc_state" pInputText>
+                    <label for="loc_state">Loc STATE</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('ocn_name') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="ocn_name" formControlName="ocn_name" pInputText>
+                    <label for="ocn_name">OCN_NAME</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('category') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="category" formControlName="category" pInputText>
+                    <label for="category">CATEGORY</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('intra_rate') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="intra_rate" formControlName="intra_rate" pInputText>
+                    <label for="intra_rate">Intra Rate</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('inter_rate') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="inter_rate" formControlName="inter_rate" pInputText>
+                    <label for="inter_rate">Inter Rate</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('init_dur') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="init_dur" formControlName="init_dur" pInputText>
+                    <label for="init_dur">Init Duration</label>
+                </span>
+            </div>
+            <div class="col-12 md:col-6">
+                <span class="p-float-label">
+                    <input type="text" class="{{isRateFieldValid('succ_dur') ? 'form-control ng-invalid ng-dirty' : 'form-control'}}" id="succ_dur" formControlName="succ_dur" pInputText>
+                    <label for="succ_dur">Succ Duration</label>
+                </span>
+            </div>
+        </div>
+        <div class="flex justify-content-end">
+            <button pButton pRipple type="submit" label="Save" icon="pi pi-save" class="p-button-text"></button>
+        </div>
+    </form>
+</p-dialog>
+
+<p-dialog header="Upload" styleClass="c-modal" [(visible)]="flag_openRateUploadDialog" (onHide)="flag_openRateUploadDialog=false" [breakpoints]="{'960px': '75vw', '640px': '100vw'}" [style]="{width: '50vw'}" [modal]="true" [draggable]="false" [resizable]="false">
+    <div class="grid pt-2">
+        <div class="p-fluid lg:col-8 col-12">
+            <span class="field p-float-label">
+                <p-dropdown [options]="uploadActionOptions" id="rateUploadMethod" [(ngModel)]="rateUploadMethod" optionLabel="name" optionValue="value" scrollHeight="150px"></p-dropdown>
+                <label>Action</label>
+            </span>
+        </div>
+        <div class="lg:col-4 col-12 text-right">
+            <button pButton pRipple label="Choose File" (click)="rateFileInput.click()" [disabled]="isRateUpLoading" icon="pi pi-upload" class="p-button-text"></button>
+            <input #rateFileInput type="file" (click)="onClickUpload($event)" (change)="changeRateListener($event)" style="display: none" accept=".csv"/>
+        </div>
+    </div>
+    
+    <strong>* The csv file format must be the same as the following table format.</strong>
+    <div class="card mt-5">
+        <p-table [value]="demoRates">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="text-center">NPANXX</th>
+                    <th class="text-center">LATA</th>
+                    <th class="text-center">OCN</th>
+                    <th class="text-center">Loc STATE</th>
+                    <th class="text-center">OCN_NAME</th>
+                    <th class="text-center">CATEGORY</th>
+                    <th class="text-center">RATE</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-upload>
+                <tr>
+                    <td class="text-center">{{upload.npanxx}}</td>
+                    <td class="text-center">{{upload.lata}}</td>
+                    <td class="text-center">{{upload.ocn}}</td>
+                    <td class="text-center">{{upload.loc_state}}</td>
+                    <td class="text-center">{{upload.ocn_name}}</td>
+                    <td class="text-center">{{upload.category}}</td>
+                    <td class="text-center">{{upload.rate}}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</p-dialog>

@@ -1,0 +1,188 @@
+<h4 class="page_title">CDR Log</h4>
+
+<div class="card">
+  <div class="grid">
+    <div class="md:col-10 col-12">
+      <div class="grid">
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <span class="p-float-label">
+            <p-dropdown
+              [options]="serverOptions"
+              [(ngModel)]="selectServer"
+              optionLabel="name"
+              optionValue="value"
+              scrollHeight="150px"
+            ></p-dropdown>
+            <label>Server</label>
+          </span>
+        </div>
+
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <span class="p-float-label">
+            <p-calendar
+              #calendar
+              selectionMode="range"
+              [readonlyInput]="true"
+              [(ngModel)]="selectedDate"
+              dateFormat="mm/dd/yy"
+              [showIcon]="true"
+              [numberOfMonths]="2"
+              styleClass="date_range"
+              panelStyleClass="date_range_panel"
+              (onSelect)="onSelectDateRangePicker($event)"
+            >
+              <ng-template pTemplate="header">
+                <div class="calendar-header pt-3 pr-5 pl-2">
+                  <button pButton pRipple type="button" (click)="onClickToday()" label="Today" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                  <button pButton pRipple type="button" (click)="onClickYesterday()" label="Yesterday" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                  <button pButton pRipple type="button" (click)="onClickThisWeek()" label="This Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                  <button pButton pRipple type="button" (click)="onClickLastWeek()" label="Last Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                  <button pButton pRipple type="button" (click)="onClickThisMonth()" label="This Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                  <button pButton pRipple type="button" (click)="onClickLastMonth()" label="Last Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                </div>
+              </ng-template>
+            </p-calendar>
+            <label>Date Range</label>
+          </span>
+        </div>
+
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <span class="p-float-label">
+            <p-dropdown
+              [options]="napOptions"
+              [(ngModel)]="selectNap"
+              optionLabel="name"
+              optionValue="value"
+              [filter]="true"
+              filterBy="name"
+              scrollHeight="150px"
+            ></p-dropdown>
+            <label>NAP</label>
+          </span>
+        </div>
+
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <c-duration-range (setDurationRage)="setFilterDurationRage($event)"></c-duration-range>
+        </div>
+
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <c-call-count-range (setCallCountRage)="setFilterCallCountRage($event)"></c-call-count-range>
+        </div>
+
+        <!-- <div class="col-12 md:col-2 p-fluid pl-0 pr-0">
+          <span class="p-float-label">
+            <p-dropdown
+              [options]="directionOptions"
+              [(ngModel)]="selectDirection"
+              optionLabel="name"
+              optionValue="value"
+              scrollHeight="150px"
+            ></p-dropdown>
+            <label>Direction</label>
+          </span>
+        </div> -->
+
+        <div class="col-12 md:col-4 p-fluid pl-0 pr-0">
+          <!-- <div class="p-inputgroup"> -->
+            <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
+          <!-- </div> -->
+        </div>
+      </div>
+    </div>
+    <div class="lg:col-2 col-12 flex align-items-end">
+      <div class="grid">
+        <div class="md:col-6 col-6">
+          <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
+        </div>
+        <div class="md:col-6 col-6 pl-0">
+          <button pButton pRipple label="Export" (click)="cdrLogExport()" icon="pi pi-download"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <!-- <h5><span *ngIf="resultsLength!=-1">Total {{resultsLength}} Call</span><span *ngIf="resultsLength>1">s</span><i *ngIf="resultsLength>0&&filterResultLength>0&&filterResultLength<resultsLength" style="font-size: medium;">, {{filterResultLength}} Call<span *ngIf="filterResultLength>1">s</span> Filtered</i></h5> -->
+  <h5><span *ngIf="filterResultLength!=-1">Total {{filterResultLength}} Call</span><span *ngIf="filterResultLength>1">s</span></h5>
+  <p-table [value]="cdr_logs" responsiveLayout="stack" [responsive]="true">
+    <ng-template pTemplate="header">
+      <tr>
+        <th class="text-align-center" [ngClass]="sortActive === 'StartTime' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('StartTime')">Start Time</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'EndTime' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('EndTime')">End Time</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'Calling' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('Calling')">Calling</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'Called' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('Called')">Called</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'LRN' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('LRN')">LRN</a>
+        </th>
+        <th class="text-align-center">Calls</th>
+        <!-- <th class="text-align-center" [ngClass]="sortActive === 'Direction' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('Direction')">Direction</a>
+        </th> -->
+        <th class="text-align-center" [ngClass]="sortActive === 'Duration' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('Duration')">Duration</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'NAP_Originate' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('NAP_Originate')">NAP Originate</a>
+        </th>
+        <th class="text-align-center" [ngClass]="sortActive === 'NAP_Answer' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+          <a (click)="onSortChange('NAP_Answer')">NAP Answer</a>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-importCDR_item>
+      <tr>
+        <td class="text-align-center">
+          <span class="p-column-title">Start Time</span>
+          {{ importCDR_item.StartTime}}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">End Time</span>
+          {{ importCDR_item.EndTime }}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">Calling</span>
+          {{ importCDR_item.Calling | phoneFormat}}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">Called</span>
+          {{ importCDR_item.Called | phoneFormat }}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">LRN</span>
+          {{ importCDR_item.LRN }}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">Calls</span>
+          {{ importCDR_item.calls }}
+        </td>
+        <!-- <td class="text-align-center">
+          <span class="p-column-title">Direction</span>
+          {{ importCDR_item.Direction }}
+        </td> -->
+        <td class="text-align-center">
+          <span class="p-column-title">Duration</span>
+          {{ importCDR_item.Duration }}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">NAP Originate</span>
+          {{ importCDR_item.NAP_Originate }}
+        </td>
+        <td class="text-align-center">
+          <span class="p-column-title">NAP Answer</span>
+          {{ importCDR_item.NAP_Answer }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <p-paginator [rows]="pageSize" [totalRecords]="filterResultLength" [rowsPerPageOptions]="rowsPerPageOptions" (onPageChange)="paginate($event)"></p-paginator>
+</div>

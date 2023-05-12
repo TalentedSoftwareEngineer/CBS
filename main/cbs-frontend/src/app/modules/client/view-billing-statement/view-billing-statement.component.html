@@ -1,0 +1,162 @@
+<h4 class="page_title">View Billing Statement</h4>
+
+<div class="card">
+    <div class="grid">
+        <div class="md:col-12 col-12">
+            <div class="grid">
+                <div *ngIf="isUser" class="md:col-3 col-12 p-fluid pl-0 pr-0">
+                  <span class="p-float-label">
+                    <p-dropdown
+                      [options]="customerOptions"
+                      [(ngModel)]="selectCustomer"
+                      optionLabel="name"
+                      optionValue="value"
+                      [filter]="true"
+                      filterBy="name"
+                      scrollHeight="150px"
+                    ></p-dropdown>
+                    <label>Customer</label>
+                  </span>
+                </div>
+
+                <div class="md:col-2 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-dropdown
+                            [options]="serverOptions"
+                            [(ngModel)]="selectServer"
+                            optionLabel="name"
+                            optionValue="value"
+                            [filter]="true"
+                            filterBy="name"
+                            scrollHeight="150px"
+                        ></p-dropdown>
+                        <label>Server</label>
+                    </span>
+                </div>
+
+                <div class="md:col-2 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-calendar
+                            #calendar
+                            selectionMode="range"
+                            [readonlyInput]="true"
+                            [(ngModel)]="selectedDate"
+                            dateFormat="mm/dd/yy"
+                            [showIcon]="true"
+                            [numberOfMonths]="2"
+                            styleClass="date_range"
+                            panelStyleClass="date_range_panel"
+                            (onSelect)="onSelectDateRangePicker($event)"
+                        >
+                            <ng-template pTemplate="header">
+                                <div class="calendar-header pt-3 pr-5 pl-2">
+                                <button pButton pRipple type="button" (click)="onClickToday()" label="Today" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickYesterday()" label="Yesterday" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickThisWeek()" label="This Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickLastWeek()" label="Last Week" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickThisMonth()" label="This Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                <button pButton pRipple type="button" (click)="onClickLastMonth()" label="Last Month" class="p-button-sm p-button-raised p-button-plain p-button-text w-full mb-2"></button>
+                                </div>
+                            </ng-template>
+                        </p-calendar>
+                        <label>Date Range</label>
+                    </span>
+                </div>
+
+                <div class="md:col-2 col-12 p-fluid pl-0 pr-0">
+                    <span class="p-float-label">
+                        <p-dropdown
+                            [options]="statusOptions"
+                            [(ngModel)]="selectStatus"
+                            optionLabel="name"
+                            optionValue="value"
+                            [filter]="true"
+                            filterBy="name"
+                            scrollHeight="150px"
+                        ></p-dropdown>
+                        <label>Status</label>
+                    </span>
+                </div>
+
+                <div class="md:col-3 col-12 p-fluid pl-0 pr-0">
+                    <div class="p-inputgroup">
+                        <input type="text" pInputText placeholder="Keyword..." [(ngModel)]="filterValue" [disabled]="isLoading" (keyup.enter)="onClickFilter()">
+                        <button type="button" pButton pRipple label="Search" icon="pi pi-search" (click)="isLoading ? '' : onClickFilter()" [style]="isLoading ? {opacity: 0.5} : ''"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <!-- <h5><span *ngIf="resultsLength!=-1">Total {{resultsLength}} Record</span><span *ngIf="resultsLength>1">s</span><i *ngIf="resultsLength>0&&filterResultLength>0&&filterResultLength<resultsLength" style="font-size: medium;">, {{filterResultLength}} Record<span *ngIf="filterResultLength>1">s</span> Filtered</i></h5> -->
+    <p-table [value]="statements" responsiveLayout="stack" [responsive]="true">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="text-align-center" [ngClass]="sortActive === 'start_at' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('start_at')">Start</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'end_at' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('end_at')">End</a>
+          </th>
+          <th *ngIf="isUser" class="text-align-center" [ngClass]="sortActive === 'customer_id' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('customer_id')">Customer</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'server_id' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('server_id')">Server</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'status' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+              <a (click)="onSortChange('status')">Status</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'total_calls' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+              <a (click)="onSortChange('total_calls')">Total Calls</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'total_duration' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('total_duration')">Total Duration</a>
+          </th>
+          <th class="text-align-center" [ngClass]="sortActive === 'total_cost' ? 'sorting_' + sortDirection.toLowerCase() :'sorting'">
+            <a (click)="onSortChange('total_cost')">Total Cost</a>
+          </th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td class="text-align-center">
+            <span class="p-column-title">Start</span>
+            {{ item.start_at }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">End</span>
+            {{ item.end_at }}
+          </td>
+          <td *ngIf="isUser" class="text-align-center">
+            <span class="p-column-title">Customer</span>
+            {{ item.customer_id }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">Server</span>
+            {{ item.server_id }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">Status</span>
+            {{ item.status }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">Total Calls</span>
+            {{ item.total_calls }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">Total Duration</span>
+            {{ item.total_duration }}
+          </td>
+          <td class="text-align-center">
+            <span class="p-column-title">Total Cost</span>
+            {{ item.total_cost }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  
+    <p-paginator [rows]="pageSize" [totalRecords]="filterResultLength" [rowsPerPageOptions]="rowsPerPageOptions" (onPageChange)="paginate($event)"></p-paginator>
+  </div>
